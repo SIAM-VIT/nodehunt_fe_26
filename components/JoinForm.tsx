@@ -48,9 +48,9 @@ export function JoinForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-7 rounded-2xl bg-[#120b0a]/90 border border-[#271c19] backdrop-blur-xl shadow-2xl">
+    <div className="w-full max-w-md mx-auto p-7 rounded-2xl bg-[#0e0a09]/90 border border-white/[0.08] backdrop-blur-xl shadow-2xl">
       {/* Tab Switcher */}
-      <div className="flex border-b border-[#271c19] mb-6 font-mono text-xs">
+      <div className="flex border-b border-white/[0.08] mb-6 font-mono text-xs">
         <button
           type="button"
           onClick={() => {
@@ -59,8 +59,8 @@ export function JoinForm() {
           }}
           className={`flex-1 pb-3 text-center transition-all cursor-pointer ${
             mode === "register"
-              ? "text-[#ea5832] border-b-2 border-[#d94f2b] font-bold"
-              : "text-[#6e625a] hover:text-[#9e9087]"
+              ? "text-[#e06655] border-b-2 border-[#b43426] font-bold"
+              : "text-[#594f49] hover:text-[#8c8079]"
           }`}
         >
           Register Team
@@ -73,8 +73,8 @@ export function JoinForm() {
           }}
           className={`flex-1 pb-3 text-center transition-all cursor-pointer ${
             mode === "resume"
-              ? "text-[#ea5832] border-b-2 border-[#d94f2b] font-bold"
-              : "text-[#6e625a] hover:text-[#9e9087]"
+              ? "text-[#e06655] border-b-2 border-[#b43426] font-bold"
+              : "text-[#594f49] hover:text-[#8c8079]"
           }`}
         >
           Resume Session
@@ -89,7 +89,7 @@ export function JoinForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-[#9e9087] mb-1.5">
+          <label className="block text-xs font-mono uppercase tracking-wider text-[#8c8079] mb-1.5">
             Team Name
           </label>
           <input
@@ -98,14 +98,14 @@ export function JoinForm() {
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
             placeholder="e.g. StackHunters"
-            className="w-full px-4 py-2.5 bg-[#0a0605] border border-[#3b2a26] focus:border-[#d94f2b] rounded-xl text-white font-sans text-sm focus:outline-none"
+            className="w-full px-4 py-2.5 bg-[#070505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-sans text-sm focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-[#9e9087] mb-1.5 flex justify-between">
+          <label className="block text-xs font-mono uppercase tracking-wider text-[#8c8079] mb-1.5 flex justify-between">
             <span>Team Password</span>
-            <span className="text-[#6e625a]">{mode === "register" ? "(Optional)" : "(Required)"}</span>
+            <span className="text-[#594f49]">{mode === "register" ? "(Optional)" : "(Required)"}</span>
           </label>
           <input
             type="password"
@@ -113,14 +113,14 @@ export function JoinForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={mode === "register" ? "Create a session password" : "Enter team password"}
-            className="w-full px-4 py-2.5 bg-[#0a0605] border border-[#3b2a26] focus:border-[#d94f2b] rounded-xl text-white font-sans text-sm focus:outline-none"
+            className="w-full px-4 py-2.5 bg-[#070505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-sans text-sm focus:outline-none"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full mt-2 py-3 bg-[#d94f2b] hover:bg-[#ea5832] text-white font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition-all shadow-lg shadow-[#d94f2b]/25 disabled:opacity-50 cursor-pointer"
+          className="w-full mt-2 py-3 bg-[#b43426] hover:bg-[#c84332] text-white font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#b43426]/20 disabled:opacity-50 cursor-pointer"
         >
           {loading ? "Authorizing..." : mode === "register" ? "Enter Arena →" : "Resume Hunt →"}
         </button>
