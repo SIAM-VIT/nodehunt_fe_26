@@ -72,16 +72,16 @@ export function NodeGraph({
     <div
       className={`relative w-full ${
         compact ? "h-[320px]" : "h-[440px]"
-      } bg-slate-950/70 rounded-2xl border border-slate-800/80 backdrop-blur-md overflow-hidden flex flex-col items-center justify-center p-2 shadow-inner`}
+      } bg-[#0c0908]/85 rounded-2xl border border-[#2b1f1c] backdrop-blur-md overflow-hidden flex flex-col items-center justify-center p-2 shadow-2xl`}
     >
-      {/* Discreet Header Label */}
+      {/* Header Label */}
       <div className="absolute top-3 left-4 z-10 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-indigo-400" />
-        <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
+        <span className="w-2 h-2 rounded-full bg-[#d94f2b]" />
+        <span className="text-[11px] font-mono uppercase tracking-wider text-[#d6ccc4] font-semibold">
           {adminMode ? "Full Graph Map (10 Nodes)" : "Active Radar"}
         </span>
         {!adminMode && (
-          <span className="text-[10px] bg-slate-900 border border-slate-700/60 px-2 py-0.5 rounded text-indigo-300 font-mono">
+          <span className="text-[10px] bg-[#1a1210] border border-[#3e2722] px-2 py-0.5 rounded text-[#ea5832] font-mono">
             Fog of War
           </span>
         )}
@@ -94,34 +94,34 @@ export function NodeGraph({
       >
         <defs>
           <marker
-            id="arrowhead-slate"
+            id="arrowhead-dim"
             markerWidth="8"
             markerHeight="6"
             refX="27"
             refY="3"
             orient="auto"
           >
-            <polygon points="0 0, 8 3, 0 6" fill="#334155" />
+            <polygon points="0 0, 8 3, 0 6" fill="#392b27" />
           </marker>
           <marker
-            id="arrowhead-indigo"
+            id="arrowhead-rust"
             markerWidth="9"
             markerHeight="6.5"
             refX="28"
             refY="3.25"
             orient="auto"
           >
-            <polygon points="0 0, 9 3.25, 0 6.5" fill="#6366f1" />
+            <polygon points="0 0, 9 3.25, 0 6.5" fill="#d94f2b" />
           </marker>
           <marker
-            id="arrowhead-teal"
+            id="arrowhead-amber"
             markerWidth="10"
             markerHeight="7"
             refX="30"
             refY="3.5"
             orient="auto"
           >
-            <polygon points="0 0, 10 3.5, 0 7" fill="#0d9488" />
+            <polygon points="0 0, 10 3.5, 0 7" fill="#e5933a" />
           </marker>
         </defs>
 
@@ -145,19 +145,19 @@ export function NodeGraph({
             return null;
           }
 
-          let strokeColor = "#1e293b";
+          let strokeColor = "#251b18";
           let strokeWidth = 1.5;
-          let marker = "url(#arrowhead-slate)";
+          let marker = "url(#arrowhead-dim)";
           let strokeDash = "none";
 
           if (isTraversed) {
-            strokeColor = "#6366f1";
+            strokeColor = "#d94f2b";
             strokeWidth = 3;
-            marker = "url(#arrowhead-indigo)";
+            marker = "url(#arrowhead-rust)";
           } else if (selectableRoute) {
-            strokeColor = "#14b8a6";
+            strokeColor = "#e5933a";
             strokeWidth = 3.5;
-            marker = "url(#arrowhead-teal)";
+            marker = "url(#arrowhead-amber)";
             strokeDash = "6,4";
           }
 
@@ -184,14 +184,14 @@ export function NodeGraph({
                     width={64}
                     height={22}
                     rx={6}
-                    fill="#020617"
-                    stroke="#14b8a6"
+                    fill="#0d0807"
+                    stroke="#e5933a"
                     strokeWidth={1.5}
                   />
                   <text
                     x={midX}
                     y={midY + 1}
-                    fill="#14b8a6"
+                    fill="#e5933a"
                     fontSize="11"
                     fontFamily="monospace"
                     fontWeight="bold"
@@ -222,8 +222,8 @@ export function NodeGraph({
                   cx={coords.cx}
                   cy={coords.cy}
                   r={20}
-                  fill="#090d16"
-                  stroke="#334155"
+                  fill="#120c0a"
+                  stroke="#342521"
                   strokeWidth={1}
                   strokeDasharray="2,2"
                 />
@@ -231,21 +231,21 @@ export function NodeGraph({
             );
           }
 
-          let fillColor = "#0f172a";
-          let strokeColor = "#334155";
+          let fillColor = "#16100e";
+          let strokeColor = "#382823";
           let strokeWidth = 2;
 
           if (isCurrent) {
-            fillColor = "#1e1b4b"; // deep indigo
-            strokeColor = "#818cf8";
+            fillColor = "#3d140b"; // deep rust
+            strokeColor = "#ea5832";
             strokeWidth = 3.5;
           } else if (selectableRoute) {
-            fillColor = "#042f2e"; // deep teal
-            strokeColor = "#14b8a6";
+            fillColor = "#341d08"; // warm amber
+            strokeColor = "#e5933a";
             strokeWidth = 3.5;
           } else if (isVisited) {
-            fillColor = "#064e3b"; // deep emerald
-            strokeColor = "#10b981";
+            fillColor = "#26130e"; // subtle warm brick
+            strokeColor = "#c24122";
             strokeWidth = 2;
           }
 
@@ -272,7 +272,7 @@ export function NodeGraph({
                   cy={coords.cy}
                   r={radius + 6}
                   fill="none"
-                  stroke={isCurrent ? "#818cf8" : "#f43f5e"}
+                  stroke={isCurrent ? "#ea5832" : "#991b1b"}
                   strokeWidth={1.5}
                   strokeDasharray={isCurrent ? "4,3" : "none"}
                 />
@@ -299,12 +299,12 @@ export function NodeGraph({
                 fontWeight="bold"
                 fill={
                   isCurrent
-                    ? "#e0e7ff"
+                    ? "#fff5f0"
                     : isVisited
-                    ? "#6ee7b7"
+                    ? "#fbd7cf"
                     : selectableRoute
-                    ? "#5eead4"
-                    : "#cbd5e1"
+                    ? "#fed7aa"
+                    : "#d6ccc4"
                 }
               >
                 {node.id}
@@ -318,7 +318,7 @@ export function NodeGraph({
                 dominantBaseline="middle"
                 fontSize="8.5"
                 fontFamily="monospace"
-                fill="#94a3b8"
+                fill="#9e9087"
               >
                 {node.type}•{node.difficulty[0].toUpperCase()}
               </text>
@@ -330,8 +330,8 @@ export function NodeGraph({
                     cx={coords.cx + 16}
                     cy={coords.cy - 16}
                     r={9.5}
-                    fill="#ef4444"
-                    stroke="#020617"
+                    fill="#d94f2b"
+                    stroke="#070505"
                     strokeWidth={1.5}
                   />
                   <text

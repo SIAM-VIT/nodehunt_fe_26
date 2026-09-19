@@ -107,11 +107,11 @@ export function AdminPreview() {
 
   if (!authed) {
     return (
-      <div className="max-w-md mx-auto my-12 p-8 bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl shadow-xl">
+      <div className="max-w-md mx-auto my-12 p-8 bg-[#120b0a]/90 border border-[#271c19] backdrop-blur-xl rounded-2xl shadow-xl">
         <h2 className="text-lg font-bold font-mono text-white uppercase tracking-wider mb-2">
           Organizers Command Deck
         </h2>
-        <p className="text-xs text-slate-400 mb-6 font-mono">
+        <p className="text-xs text-[#9e9087] mb-6 font-mono">
           Enter admin secret header to monitor live teams and access controls.
         </p>
 
@@ -128,12 +128,12 @@ export function AdminPreview() {
             placeholder="Enter X-Admin-Secret..."
             value={secret}
             onChange={(e) => setSecret(e.target.value)}
-            className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700/80 focus:border-indigo-500 rounded-xl text-white font-mono text-sm placeholder:text-slate-600 focus:outline-none"
+            className="w-full px-4 py-2.5 bg-[#090504] border border-[#3b2a26] focus:border-[#d94f2b] rounded-xl text-white font-mono text-sm placeholder:text-[#6e625a] focus:outline-none"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition-colors cursor-pointer"
+            className="w-full py-2.5 bg-[#d94f2b] hover:bg-[#ea5832] text-white font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition-colors cursor-pointer shadow-lg shadow-[#d94f2b]/20"
           >
             {loading ? "Authenticating..." : "Access Control Panel"}
           </button>
@@ -145,9 +145,9 @@ export function AdminPreview() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       {/* Admin Header */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-[#120b0a]/90 border border-[#271c19] rounded-2xl p-4 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
         <div>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 font-semibold block">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-[#ea5832] font-semibold block">
             Command Deck
           </span>
           <h1 className="text-lg font-bold text-white tracking-tight">
@@ -158,7 +158,7 @@ export function AdminPreview() {
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => loadDashboard(secret)}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-200 font-mono text-xs transition-colors cursor-pointer"
+            className="px-3 py-1.5 bg-[#1e1513] hover:bg-[#2c1e1b] rounded-lg text-[#d6ccc4] font-mono text-xs transition-colors cursor-pointer border border-[#392925]"
           >
             ↻ Refresh
           </button>
@@ -173,7 +173,7 @@ export function AdminPreview() {
               localStorage.removeItem(STORAGE_ADMIN_SECRET);
               setAuthed(false);
             }}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-400 font-mono text-xs rounded-lg transition-colors cursor-pointer"
+            className="px-3 py-1.5 bg-[#120b0a] hover:bg-[#1c120f] text-[#9e9087] font-mono text-xs rounded-lg transition-colors cursor-pointer border border-[#271c19]"
           >
             Logout
           </button>
@@ -190,9 +190,9 @@ export function AdminPreview() {
       <div className="grid lg:grid-cols-12 gap-6 items-start">
         {/* Full Radar Map */}
         <div className="lg:col-span-5 space-y-2">
-          <div className="flex items-center justify-between px-1 text-xs font-mono text-slate-400">
+          <div className="flex items-center justify-between px-1 text-xs font-mono text-[#9e9087]">
             <span className="font-semibold uppercase tracking-wider">Full 10-Node Grid</span>
-            <span className="text-emerald-400">Live Density</span>
+            <span className="text-[#ea5832]">Live Density</span>
           </div>
 
           <NodeGraph
@@ -203,8 +203,8 @@ export function AdminPreview() {
         </div>
 
         {/* Live Teams Table */}
-        <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl backdrop-blur-xl overflow-hidden shadow-xl">
-          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between">
+        <div className="lg:col-span-7 bg-[#120b0a]/90 border border-[#271c19] rounded-2xl backdrop-blur-xl overflow-hidden shadow-xl">
+          <div className="p-3.5 border-b border-[#241a17] flex items-center justify-between">
             <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-white">
               Teams List ({teams.length})
             </h3>
@@ -212,7 +212,7 @@ export function AdminPreview() {
 
           <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
             <table className="w-full text-left font-mono text-xs">
-              <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800 sticky top-0 z-10">
+              <thead className="bg-[#090504] text-[#9e9087] uppercase tracking-wider text-[11px] border-b border-[#241a17] sticky top-0 z-10">
                 <tr>
                   <th className="py-2.5 px-3">Team</th>
                   <th className="py-2.5 px-2 text-center">Node</th>
@@ -221,16 +221,16 @@ export function AdminPreview() {
                   <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-300">
+              <tbody className="divide-y divide-[#241a17] text-[#d6ccc4]">
                 {teams.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-850/50 transition-colors">
+                  <tr key={t.id} className="hover:bg-[#1a110e]/50 transition-colors">
                     <td className="py-2.5 px-3 font-medium text-white">
                       <div>{t.team_name}</div>
-                      <div className="text-[10px] text-slate-500 font-mono">
+                      <div className="text-[10px] text-[#6e625a] font-mono">
                         {t.path?.join(" → ") || "N01"}
                       </div>
                     </td>
-                    <td className="py-2.5 px-2 text-center font-bold text-indigo-300">
+                    <td className="py-2.5 px-2 text-center font-bold text-[#ea5832]">
                       {t.current_node_id}
                     </td>
                     <td className="py-2.5 px-2 text-center font-bold text-white">
@@ -246,7 +246,7 @@ export function AdminPreview() {
                           DONE
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#1e1513] text-[#d6ccc4]">
                           ACTIVE
                         </span>
                       )}
@@ -254,7 +254,7 @@ export function AdminPreview() {
                     <td className="py-2.5 px-3 text-right space-x-1.5 whitespace-nowrap">
                       <button
                         onClick={() => handleRename(t)}
-                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                        className="px-2 py-0.5 bg-[#1c1412] hover:bg-[#281c19] text-[#d6ccc4] rounded text-[10px] cursor-pointer border border-[#3b2a26]"
                       >
                         Rename
                       </button>
@@ -263,7 +263,7 @@ export function AdminPreview() {
                         className={`px-2 py-0.5 rounded text-[10px] cursor-pointer font-bold ${
                           t.is_locked
                             ? "bg-emerald-950 text-emerald-300 border border-emerald-500/30"
-                            : "bg-slate-800 text-amber-300 border border-amber-500/20"
+                            : "bg-[#1c1412] text-[#e5933a] border border-[#e5933a]/30"
                         }`}
                       >
                         {t.is_locked ? "Unlock" : "Lock"}

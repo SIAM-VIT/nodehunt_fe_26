@@ -1,4 +1,3 @@
-
 {
   "name": "nodehunt-fe-26",
   "version": "0.1.0",
@@ -12,11 +11,13 @@
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
     "next": "16.2.11",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-icons": "^5.7.0"
+    "react-icons": "^5.7.0",
+    "tailwind-merge": "^3.7.0"
   },
   "optionalDependencies": {
     "@next/swc-wasm-nodejs": "16.2.11",
@@ -33,5 +34,3 @@
     "typescript": "^5"
   }
 }
-
-

@@ -1,25 +1,16 @@
-
 import { GameClient } from "@/components/GameClient";
 import { Navbar } from "@/components/Navbar";
+import { DarkGradientBg } from "@/components/DarkGradientBg";
 
 export default function GamePage() {
   return (
-    <>
-      <Navbar />
-      <main className="game-page page-pad">
-        <div className="shell">
-          <div className="section-head game-head">
-            <div>
-              <div className="section-kicker">Live Hunt</div>
-              <h2>Start at N01.</h2>
-            </div>
-            <p className="section-copy">Answer the current node, unlock movement, then choose Left or Right. The graph view highlights only your visited path.</p>
-          </div>
+    <DarkGradientBg>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 py-4">
           <GameClient />
-        </div>
-      </main>
-    </>
+        </main>
+      </div>
+    </DarkGradientBg>
   );
 }
-
-

@@ -1,29 +1,32 @@
-
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
+import { DarkGradientBg } from "@/components/DarkGradientBg";
 
 export default function WinnerPage() {
   return (
-    <>
-      <Navbar />
-      <main className="page-pad">
-        <div className="shell">
-          <div className="card">
-            <div className="section-kicker">Completed</div>
-            <h2>Hunt completed.</h2>
-            <p className="section-copy" style={{ marginTop: 18 }}>Your team has completed NodeHunt. Final stats will appear here once connected to the backend.</p>
-            <div className="grid-4" style={{ marginTop: 32 }}>
-              <div className="stat"><span className="mono-label">Total Score</span><strong>210</strong></div>
-              <div className="stat"><span className="mono-label">Final Node</span><strong>N14</strong></div>
-              <div className="stat"><span className="mono-label">Path</span><strong>7 nodes</strong></div>
-              <div className="stat"><span className="mono-label">Finish</span><strong>42:18</strong></div>
+    <DarkGradientBg>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="max-w-md mx-auto p-8 rounded-2xl bg-[#120b09]/90 border border-[#e5933a]/40 shadow-2xl">
+            <div className="text-4xl mb-3">🏆</div>
+            <h1 className="text-2xl font-bold text-[#f8f4f0] mb-2 font-mono">
+              HUNT OBJECTIVE COMPLETED!
+            </h1>
+            <p className="text-xs text-[#9e9087] mb-6 font-sans leading-relaxed">
+              Congratulations! Your team successfully traversed the tournament graph and completed the final terminal node challenge.
+            </p>
+            <div className="flex justify-center gap-3 font-mono text-xs">
+              <Link
+                href="/results"
+                className="px-5 py-2.5 bg-[#d94f2b] hover:bg-[#c24122] text-white rounded-lg transition-colors font-bold"
+              >
+                View Official Results →
+              </Link>
             </div>
-            <div className="hero-actions"><Link className="btn btn-primary" href="/">Back home</Link></div>
           </div>
-        </div>
-      </main>
-    </>
+        </main>
+      </div>
+    </DarkGradientBg>
   );
 }
-
-

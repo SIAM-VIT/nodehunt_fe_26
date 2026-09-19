@@ -1,18 +1,16 @@
-
 import { Navbar } from "@/components/Navbar";
 import { ResultsClient } from "@/components/ResultsClient";
+import { DarkGradientBg } from "@/components/DarkGradientBg";
 
 export default function ResultsPage() {
   return (
-    <>
-      <Navbar />
-      <main className="page-pad">
-        <div className="shell">
+    <DarkGradientBg>
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 py-6">
           <ResultsClient />
-        </div>
-      </main>
-    </>
+        </main>
+      </div>
+    </DarkGradientBg>
   );
 }
-
-
