@@ -1,29 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Obsidian & Rusty Iron palette */
-  --bg-obsidian: #070505;
-  --bg-surface: #100b0a;
-  --bg-surface-2: #171110;
-  --bg-surface-3: #221917;
-  --bg-card: rgba(16, 11, 10, 0.88);
+  /* Obsidian Deep Black palette */
+  --bg-obsidian: #050505;
+  --bg-surface: #0c0909;
+  --bg-surface-2: #140e0d;
+  --bg-surface-3: #1c1413;
+  --bg-card: rgba(12, 9, 9, 0.85);
 
   /* Subtle border lines */
-  --border-dim: rgba(230, 215, 205, 0.08);
-  --border-subtle: rgba(230, 215, 205, 0.15);
-  --border-rust: rgba(217, 79, 43, 0.45);
+  --border-dim: rgba(255, 255, 255, 0.07);
+  --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-rust: rgba(180, 52, 38, 0.4);
 
   /* Typography Colors */
-  --text-primary: #f8f4f0;
-  --text-secondary: #d6ccc4;
-  --text-muted: #9e9087;
-  --text-faint: #6e625a;
+  --text-primary: #f8f6f5;
+  --text-secondary: #d1c7c2;
+  --text-muted: #8c8079;
+  --text-faint: #594f49;
 
-  /* Rusty Red & Warm Amber Accents */
-  --accent-rust: #d94f2b;
-  --accent-rust-hover: #c24122;
-  --accent-rust-bright: #ea5832;
-  --accent-amber: #e5933a;
+  /* Muted Rusty Red & Warm Amber Accents */
+  --accent-rust: #c84332;
+  --accent-rust-hover: #b43426;
+  --accent-rust-subtle: rgba(200, 67, 50, 0.15);
+  --accent-amber: #d9822b;
   --accent-emerald: #10b981;
   --accent-rose: #e11d48;
 
@@ -74,7 +74,7 @@ a {
   z-index: 50;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  background: rgba(7, 5, 5, 0.82);
+  background: rgba(5, 5, 5, 0.85);
   border-bottom: 1px solid var(--border-dim);
 }
 
@@ -101,14 +101,14 @@ a {
   width: 28px;
   height: 28px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #d94f2b, #e5933a);
+  background: linear-gradient(135deg, #b43426, #d9822b);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 800;
-  box-shadow: 0 4px 14px rgba(217, 79, 43, 0.35);
+  box-shadow: 0 2px 10px rgba(180, 52, 38, 0.3);
 }
 
 .nav-links {
@@ -129,7 +129,7 @@ a {
 }
 
 .nav-cta {
-  background: var(--bg-surface-2) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
   color: var(--text-primary) !important;
   border: 1px solid var(--border-subtle) !important;
   padding: 6px 14px !important;
@@ -141,7 +141,7 @@ a {
 
 .nav-cta:hover {
   border-color: var(--accent-rust) !important;
-  background: var(--bg-surface-3) !important;
+  background: var(--accent-rust-subtle) !important;
 }
 
 /* Card */
