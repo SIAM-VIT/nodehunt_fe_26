@@ -73,7 +73,7 @@ export function AdminPreview() {
   };
 
   const handleDeleteTeam = async (team: AdminTeamOut) => {
-    if (!confirm(`Are you sure you want to permanently delete team "${team.team_name}"?`)) return;
+    if (!confirm(`Are you sure you want to delete team "${team.team_name}"?`)) return;
     try {
       await deleteOneTeam(secret, team.id);
       setActionMsg(`Team "${team.team_name}" deleted.`);
@@ -84,7 +84,7 @@ export function AdminPreview() {
   };
 
   const handleResetAll = async () => {
-    const confirmText = prompt("DANGER: Type 'RESET' to delete ALL teams and wipe the tournament database:");
+    const confirmText = prompt("Type 'RESET' to delete ALL teams and wipe the database:");
     if (confirmText !== "RESET") return;
     try {
       await deleteAllTeams(secret);
@@ -95,7 +95,6 @@ export function AdminPreview() {
     }
   };
 
-  // Compute team distribution per node for admin radar
   const teamLocations = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const team of teams) {
@@ -108,16 +107,16 @@ export function AdminPreview() {
 
   if (!authed) {
     return (
-      <div className="max-w-md mx-auto my-12 p-8 bg-[#080e22]/90 border border-cyan-500/20 backdrop-blur-xl rounded-2xl shadow-2xl">
-        <h2 className="text-xl font-bold font-mono text-cyan-300 uppercase tracking-wider mb-2">
-          Organizers Portal
+      <div className="max-w-md mx-auto my-12 p-8 bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl shadow-xl">
+        <h2 className="text-lg font-bold font-mono text-white uppercase tracking-wider mb-2">
+          Organizers Command Deck
         </h2>
         <p className="text-xs text-slate-400 mb-6 font-mono">
-          Enter admin secret header to monitor live teams and manage event controls.
+          Enter admin secret header to monitor live teams and access controls.
         </p>
 
         {error && (
-          <div className="p-3 mb-4 rounded-xl bg-red-950/70 border border-red-500/30 text-red-300 text-xs font-mono">
+          <div className="p-3 mb-4 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs font-mono">
             {error}
           </div>
         )}
@@ -129,12 +128,12 @@ export function AdminPreview() {
             placeholder="Enter X-Admin-Secret..."
             value={secret}
             onChange={(e) => setSecret(e.target.value)}
-            className="w-full px-4 py-2.5 bg-[#030712] border border-cyan-500/30 focus:border-cyan-400 rounded-xl text-white font-mono text-sm placeholder:text-slate-600 focus:outline-none"
+            className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700/80 focus:border-indigo-500 rounded-xl text-white font-mono text-sm placeholder:text-slate-600 focus:outline-none"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-mono font-bold tracking-wider uppercase rounded-xl transition-colors cursor-pointer"
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition-colors cursor-pointer"
           >
             {loading ? "Authenticating..." : "Access Control Panel"}
           </button>
@@ -145,36 +144,36 @@ export function AdminPreview() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
-      {/* Admin Top HUD */}
-      <div className="bg-[#080e22]/90 border border-cyan-500/20 rounded-2xl p-4 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
+      {/* Admin Header */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-cyan-400 font-bold block">
-            Organizers Command Deck
+          <span className="text-[10px] font-mono uppercase tracking-wider text-indigo-400 font-semibold block">
+            Command Deck
           </span>
-          <h1 className="text-xl font-bold text-white tracking-wide">
+          <h1 className="text-lg font-bold text-white tracking-tight">
             Live Tournament Telemetry ({teams.length} Teams)
           </h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => loadDashboard(secret)}
-            className="px-4 py-2 bg-cyan-950 border border-cyan-500/30 hover:border-cyan-400 rounded-xl text-cyan-300 font-mono text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-200 font-mono text-xs transition-colors cursor-pointer"
           >
             ↻ Refresh
           </button>
           <button
             onClick={handleResetAll}
-            className="px-4 py-2 bg-red-950/80 border border-red-500/40 hover:bg-red-900 text-red-300 font-mono text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+            className="px-3 py-1.5 bg-rose-950/60 border border-rose-500/30 hover:bg-rose-900 text-rose-300 font-mono text-xs rounded-lg transition-colors cursor-pointer"
           >
-            Danger: Reset All
+            Reset All
           </button>
           <button
             onClick={() => {
               localStorage.removeItem(STORAGE_ADMIN_SECRET);
               setAuthed(false);
             }}
-            className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs rounded-xl transition-colors cursor-pointer"
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-850 text-slate-400 font-mono text-xs rounded-lg transition-colors cursor-pointer"
           >
             Logout
           </button>
@@ -182,22 +181,18 @@ export function AdminPreview() {
       </div>
 
       {actionMsg && (
-        <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
+        <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono">
           ✓ {actionMsg}
         </div>
       )}
 
-      {/* Grid: Full 10-Node Radar (Right) & Live Teams Table (Left) */}
+      {/* Grid: 10-Node Radar (Left) | Live Teams Table (Right) */}
       <div className="grid lg:grid-cols-12 gap-6 items-start">
-        {/* Full Organizers Radar Map */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-mono uppercase tracking-widest text-slate-400 font-bold">
-              Full 10-Node Grid & Team Locations
-            </h3>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">
-              Active Map
-            </span>
+        {/* Full Radar Map */}
+        <div className="lg:col-span-5 space-y-2">
+          <div className="flex items-center justify-between px-1 text-xs font-mono text-slate-400">
+            <span className="font-semibold uppercase tracking-wider">Full 10-Node Grid</span>
+            <span className="text-emerald-400">Live Density</span>
           </div>
 
           <NodeGraph
@@ -205,84 +200,77 @@ export function AdminPreview() {
             teamLocations={teamLocations}
             compact={false}
           />
-
-          <div className="bg-[#060b18]/70 border border-cyan-500/10 rounded-xl p-3 text-[11px] font-mono text-slate-400">
-            Red badges indicate how many teams are currently on that node.
-          </div>
         </div>
 
-        {/* Live Teams Management Table */}
-        <div className="lg:col-span-7 bg-[#060b18]/90 border border-cyan-500/20 rounded-2xl backdrop-blur-xl overflow-hidden shadow-2xl">
-          <div className="p-4 border-b border-cyan-500/10 flex items-center justify-between">
-            <h3 className="text-sm font-mono uppercase tracking-widest font-bold text-white">
-              Registered Teams ({teams.length})
+        {/* Live Teams Table */}
+        <div className="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-2xl backdrop-blur-xl overflow-hidden shadow-xl">
+          <div className="p-3.5 border-b border-slate-800 flex items-center justify-between">
+            <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-white">
+              Teams List ({teams.length})
             </h3>
           </div>
 
-          <div className="overflow-x-auto max-h-[550px] overflow-y-auto">
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
             <table className="w-full text-left font-mono text-xs">
-              <thead className="bg-[#040816] text-slate-400 uppercase tracking-wider text-[11px] border-b border-cyan-500/10 sticky top-0 z-10">
+              <thead className="bg-slate-950 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800 sticky top-0 z-10">
                 <tr>
-                  <th className="py-3 px-3">Team</th>
-                  <th className="py-3 px-2 text-center">Node</th>
-                  <th className="py-3 px-2 text-center">Score</th>
-                  <th className="py-3 px-2 text-center">Status</th>
-                  <th className="py-3 px-3 text-right">Actions</th>
+                  <th className="py-2.5 px-3">Team</th>
+                  <th className="py-2.5 px-2 text-center">Node</th>
+                  <th className="py-2.5 px-2 text-center">Score</th>
+                  <th className="py-2.5 px-2 text-center">Status</th>
+                  <th className="py-2.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-cyan-500/10 text-slate-300">
+              <tbody className="divide-y divide-slate-800 text-slate-300">
                 {teams.map((t) => (
-                  <tr key={t.id} className="hover:bg-cyan-950/20 transition-colors">
-                    <td className="py-3 px-3 font-medium text-white">
+                  <tr key={t.id} className="hover:bg-slate-850/50 transition-colors">
+                    <td className="py-2.5 px-3 font-medium text-white">
                       <div>{t.team_name}</div>
                       <div className="text-[10px] text-slate-500 font-mono">
-                        Path: {t.path?.join(" → ") || "N01"}
+                        {t.path?.join(" → ") || "N01"}
                       </div>
                     </td>
-                    <td className="py-3 px-2 text-center font-bold text-cyan-300">
+                    <td className="py-2.5 px-2 text-center font-bold text-indigo-300">
                       {t.current_node_id}
                     </td>
-                    <td className="py-3 px-2 text-center font-bold text-amber-300">
+                    <td className="py-2.5 px-2 text-center font-bold text-white">
                       {t.total_score} PTS
                     </td>
-                    <td className="py-3 px-2 text-center">
+                    <td className="py-2.5 px-2 text-center">
                       {t.is_locked ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-red-950 border border-red-500/40 text-red-300">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-rose-950 border border-rose-500/40 text-rose-300">
                           LOCKED
                         </span>
                       ) : t.completed ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-950 border border-emerald-500/40 text-emerald-300">
-                          COMPLETED
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-950 border border-emerald-500/40 text-emerald-300">
+                          DONE
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-cyan-950 border border-cyan-500/40 text-cyan-300">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300">
                           ACTIVE
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-3 text-right space-x-1.5 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-right space-x-1.5 whitespace-nowrap">
                       <button
                         onClick={() => handleRename(t)}
-                        title="Rename Team"
-                        className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
+                        className="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] cursor-pointer"
                       >
                         Rename
                       </button>
                       <button
                         onClick={() => handleToggleLock(t)}
-                        title={t.is_locked ? "Unlock Team" : "Lock Team"}
-                        className={`px-2 py-1 rounded text-[10px] cursor-pointer font-bold ${
+                        className={`px-2 py-0.5 rounded text-[10px] cursor-pointer font-bold ${
                           t.is_locked
-                            ? "bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/30"
-                            : "bg-amber-900/60 hover:bg-amber-800 text-amber-300 border border-amber-500/30"
+                            ? "bg-emerald-950 text-emerald-300 border border-emerald-500/30"
+                            : "bg-slate-800 text-amber-300 border border-amber-500/20"
                         }`}
                       >
                         {t.is_locked ? "Unlock" : "Lock"}
                       </button>
                       <button
                         onClick={() => handleDeleteTeam(t)}
-                        title="Delete Team"
-                        className="px-2 py-1 bg-red-950 hover:bg-red-900 text-red-300 border border-red-500/30 rounded text-[10px] cursor-pointer"
+                        className="px-2 py-0.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded text-[10px] cursor-pointer"
                       >
                         Delete
                       </button>
@@ -297,4 +285,5 @@ export function AdminPreview() {
     </div>
   );
 }
+
 export default AdminPreview;
