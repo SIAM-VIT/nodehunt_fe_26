@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createTeam, startTeam, loginTeam } from "@/lib/api";
+import { loginTeam } from "@/lib/api";
 import {
   STORAGE_SESSION_ID,
   STORAGE_TEAM_NAME,
   STORAGE_CURRENT_NODE,
 } from "@/lib/constants";
+import { ShieldCheck, KeyRound } from "lucide-react";
 
 export function JoinForm() {
   const router = useRouter();
-  const [mode, setMode] = useState<"register" | "resume">("register");
   const [teamName, setTeamName] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,62 +23,33 @@ export function JoinForm() {
     setError(null);
 
     try {
-      if (mode === "register") {
-        const session = await createTeam(teamName.trim(), password.trim() || undefined);
-        localStorage.setItem(STORAGE_SESSION_ID, session.session_id);
-        localStorage.setItem(STORAGE_TEAM_NAME, session.team_name);
+      const session = await loginTeam(teamName.trim(), password.trim());
+      localStorage.setItem(STORAGE_SESSION_ID, session.session_id);
+      localStorage.setItem(STORAGE_TEAM_NAME, session.team_name);
+      localStorage.setItem(STORAGE_CURRENT_NODE, session.current_node_id || "N01");
 
-        const started = await startTeam(session.session_id);
-        localStorage.setItem(STORAGE_CURRENT_NODE, started.current_node_id || "N01");
-
-        router.push("/game");
-      } else {
-        const session = await loginTeam(teamName.trim(), password.trim());
-        localStorage.setItem(STORAGE_SESSION_ID, session.session_id);
-        localStorage.setItem(STORAGE_TEAM_NAME, session.team_name);
-        localStorage.setItem(STORAGE_CURRENT_NODE, session.current_node_id || "N01");
-
-        router.push("/game");
-      }
+      router.push("/game");
     } catch (err: any) {
-      setError(err.message || "Failed to authenticate session");
+      setError(err.message || "Failed to authenticate team. Ensure your team has been created by an admin.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-7 rounded-2xl bg-[#0e0a09]/90 border border-white/[0.08] backdrop-blur-xl shadow-2xl">
-      {/* Tab Switcher */}
-      <div className="flex border-b border-white/[0.08] mb-6 font-mono text-xs">
-        <button
-          type="button"
-          onClick={() => {
-            setMode("register");
-            setError(null);
-          }}
-          className={`flex-1 pb-3 text-center transition-all cursor-pointer ${
-            mode === "register"
-              ? "text-[#e06655] border-b-2 border-[#b43426] font-bold"
-              : "text-[#594f49] hover:text-[#8c8079]"
-          }`}
-        >
-          Register Team
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setMode("resume");
-            setError(null);
-          }}
-          className={`flex-1 pb-3 text-center transition-all cursor-pointer ${
-            mode === "resume"
-              ? "text-[#e06655] border-b-2 border-[#b43426] font-bold"
-              : "text-[#594f49] hover:text-[#8c8079]"
-          }`}
-        >
-          Resume Session
-        </button>
+    <div className="w-full max-w-md mx-auto p-7 rounded-2xl bg-[#0c0807]/90 border border-white/[0.08] backdrop-blur-xl shadow-2xl">
+      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/[0.06]">
+        <div className="w-10 h-10 rounded-xl bg-[#1d0f0c] border border-[#b43426]/40 flex items-center justify-center text-[#e06655]">
+          <KeyRound className="w-5 h-5" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold font-mono text-white tracking-wide">
+            Team Authentication
+          </h2>
+          <p className="text-[11px] text-[#8c8079] font-mono">
+            Enter assigned team credentials to access arena
+          </p>
+        </div>
       </div>
 
       {error && (
@@ -98,22 +69,21 @@ export function JoinForm() {
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
             placeholder="e.g. StackHunters"
-            className="w-full px-4 py-2.5 bg-[#070505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-sans text-sm focus:outline-none"
+            className="w-full px-4 py-2.5 bg-[#050505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-sans text-sm focus:outline-none placeholder:text-[#594f49]"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-mono uppercase tracking-wider text-[#8c8079] mb-1.5 flex justify-between">
-            <span>Team Password</span>
-            <span className="text-[#594f49]">{mode === "register" ? "(Optional)" : "(Required)"}</span>
+          <label className="block text-xs font-mono uppercase tracking-wider text-[#8c8079] mb-1.5">
+            Team Password
           </label>
           <input
             type="password"
-            required={mode === "resume"}
+            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder={mode === "register" ? "Create a session password" : "Enter team password"}
-            className="w-full px-4 py-2.5 bg-[#070505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-sans text-sm focus:outline-none"
+            placeholder="Enter password given by admin"
+            className="w-full px-4 py-2.5 bg-[#050505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-sans text-sm focus:outline-none placeholder:text-[#594f49]"
           />
         </div>
 
@@ -122,8 +92,14 @@ export function JoinForm() {
           disabled={loading}
           className="w-full mt-2 py-3 bg-[#b43426] hover:bg-[#c84332] text-white font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#b43426]/20 disabled:opacity-50 cursor-pointer"
         >
-          {loading ? "Authorizing..." : mode === "register" ? "Enter Arena →" : "Resume Hunt →"}
+          {loading ? "Authorizing Team..." : "Enter Arena →"}
         </button>
+
+        <div className="pt-2 text-center">
+          <p className="text-[11px] text-[#594f49] font-mono">
+            Need a team created? Contact an organizer at the invigilator desk.
+          </p>
+        </div>
       </form>
     </div>
   );
