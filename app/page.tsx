@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
-import { NodeGraph } from "@/components/NodeGraph";
 import { DarkGradientBg } from "@/components/DarkGradientBg";
 
 export default function Home() {
@@ -149,24 +148,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Live Graph Radar Preview */}
-          <section className="py-16">
-            <div className="shell max-w-4xl mx-auto text-center">
-              <div className="mb-8">
-                <span className="text-xs font-mono uppercase tracking-widest text-[#d95b4c] font-semibold block mb-2">
-                  Tournament Map
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-bold text-[#f8f6f5] mb-3">Confirmed 10-Node Graph</h2>
-                <p className="text-xs text-[#8c8079] font-mono">
-                  Starts at N01. Branch choices navigate teams towards the grand terminal finale at N08.
-                </p>
-              </div>
-
-              <div className="p-2 sm:p-4 rounded-2xl bg-[#0a0707]/80 border border-white/[0.07]">
-                <NodeGraph adminMode={true} compact={false} />
-              </div>
-            </div>
-          </section>
         </main>
 
         {/* Clean Footer */}
