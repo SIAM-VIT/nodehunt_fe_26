@@ -7,8 +7,6 @@ import {
   type Difficulty,
 } from "@/data/graph";
 
-import { PASSCODE_CONFIG } from "@/lib/passcodes";
-
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type { Direction, Difficulty, NodeType };
@@ -136,26 +134,7 @@ function getLocalTeams(): AdminTeamOut[] {
   try {
     const raw = localStorage.getItem(MOCK_TEAMS_KEY);
     if (!raw) {
-      const initial: AdminTeamOut[] = [
-        {
-          id: "team-alpha-01",
-          team_name: "AlphaCoders",
-          created_at: new Date().toISOString(),
-          started_at: new Date().toISOString(),
-          completed_at: null,
-          current_node_id: "N01",
-          path: ["N01"],
-          total_score: 0,
-          is_locked: false,
-          lock_reason: null,
-          completed: false,
-          plain_password: "alpha2026password",
-          moves: [],
-          progress: [],
-        },
-      ];
-      localStorage.setItem(MOCK_TEAMS_KEY, JSON.stringify(initial));
-      return initial;
+      return [];
     }
     return JSON.parse(raw);
   } catch {
@@ -168,12 +147,8 @@ function saveLocalTeams(teams: AdminTeamOut[]) {
   localStorage.setItem(MOCK_TEAMS_KEY, JSON.stringify(teams));
 }
 
-function getTeamState(sessionId: string): AdminTeamOut | undefined {
-  const teams = getLocalTeams();
-  return teams.find((t) => t.id === sessionId);
-}
-
 function getOrInitNodeProgress(team: AdminTeamOut, nodeId: string): ProgressOut {
+  if (!team.progress) team.progress = [];
   let prog = team.progress.find((p) => p.node_id === nodeId);
   if (!prog) {
     prog = {
@@ -415,8 +390,8 @@ export async function validatePasscode(
 ): Promise<ValidateResponse> {
   const code = passcode.trim().toLowerCase();
 
-  const SUCCESS_PASSCODES = PASSCODE_CONFIG.SUCCESS_PASSCODES.map((c) => c.toLowerCase());
-  const STRIKE_PASSCODES = PASSCODE_CONFIG.STRIKE_PASSCODES.map((c) => c.toLowerCase());
+  const SUCCESS_PASSCODES = ["verified26", "solved", "sunsunsunday", "nodehunt", "siamvit"];
+  const STRIKE_PASSCODES = ["strike26", "retry", "wrong", "strike"];
 
   const isSuccess = SUCCESS_PASSCODES.includes(code);
   const isStrike = STRIKE_PASSCODES.includes(code);
@@ -592,6 +567,7 @@ export async function moveTeam(sessionId: string, nodeId: string, direction: Dir
     if (!team.path.includes(nextNodeId)) {
       team.path.push(nextNodeId);
     }
+    if (!team.moves) team.moves = [];
     team.moves.push({
       from_node: nodeId,
       to_node: nextNodeId,
@@ -618,7 +594,7 @@ export async function moveTeam(sessionId: string, nodeId: string, direction: Dir
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   const localTeams = getLocalTeams();
-  // Filter for completed teams primarily, sort by highest score, then fewest wrong attempts
+  // Filter for completed teams primarily, sort by highest score, then completion time
   const sorted = [...localTeams]
     .filter((t) => t.completed)
     .sort((a, b) => b.total_score - a.total_score || (a.completed_at || "").localeCompare(b.completed_at || ""));
@@ -630,9 +606,9 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
     completed: t.completed,
     completed_at: t.completed_at,
     path_length: t.path?.length || 1,
-    nodes_solved: t.progress.filter((p) => p.solved).length,
-    nodes_exhausted: t.progress.filter((p) => p.exhausted).length,
-    wrong_attempts: t.progress.reduce((acc, p) => acc + (p.attempts_used - (p.solved ? 1 : 0)), 0),
+    nodes_solved: (t.progress || []).filter((p) => p.solved).length,
+    nodes_exhausted: (t.progress || []).filter((p) => p.exhausted).length,
+    wrong_attempts: (t.progress || []).reduce((acc, p) => acc + (p.attempts_used - (p.solved ? 1 : 0)), 0),
   }));
 }
 
