@@ -26,6 +26,7 @@ import {
   Activity,
   ChevronRight,
   UserPlus,
+  Key,
 } from "lucide-react";
 
 type AdminTab = "dashboard" | "teams" | "create" | "radar";
@@ -539,6 +540,7 @@ export function AdminPreview() {
                   <thead className="bg-[#050505] text-[#8c8079] uppercase tracking-wider text-[11px] border-b border-white/[0.06] sticky top-0 z-10">
                     <tr>
                       <th className="py-3 px-4">Team</th>
+                      <th className="py-3 px-3 text-center">Password</th>
                       <th className="py-3 px-3 text-center">Node</th>
                       <th className="py-3 px-3 text-center">Score</th>
                       <th className="py-3 px-3 text-center">Status</th>
@@ -553,6 +555,12 @@ export function AdminPreview() {
                           <div className="text-[10px] text-[#594f49] font-mono mt-0.5">
                             Path: {t.path?.join(" → ") || "N01"}
                           </div>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-[#1d0f0c] border border-[#b43426]/30 text-[#e8b5af] font-mono text-[11px] select-all">
+                            <Key className="w-3 h-3 text-[#e06655]" />
+                            {t.plain_password || "••••••••"}
+                          </span>
                         </td>
                         <td className="py-3 px-3 text-center font-bold text-[#e06655]">
                           {t.current_node_id}
@@ -606,7 +614,7 @@ export function AdminPreview() {
                     ))}
                     {filteredTeams.length === 0 && (
                       <tr>
-                        <td colSpan={5} className="py-12 text-center text-[#594f49] font-mono text-xs">
+                        <td colSpan={6} className="py-12 text-center text-[#594f49] font-mono text-xs">
                           No matching teams found.
                         </td>
                       </tr>
