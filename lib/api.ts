@@ -464,11 +464,23 @@ export async function validatePasscode(
     }
     saveLocalTeams(teams);
 
-    // Call backend silently
-    request<ValidateResponse>("/api/validate", {
-      method: "POST",
-      body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
-    }).catch(() => {});
+    // Call backend
+    try {
+      const remoteRes = await request<ValidateResponse>("/api/validate", {
+        method: "POST",
+        body: JSON.stringify({ session_id: sessionId, node_id: nodeId, answer: passcode.trim() }),
+      });
+      if (remoteRes.total_score !== undefined) {
+        team.total_score = remoteRes.total_score;
+      }
+      saveLocalTeams(teams);
+      return {
+        ...remoteRes,
+        available_routes: isTerminal ? [] : connectedRoutes,
+      };
+    } catch (e) {
+      console.warn("Backend validate fallback:", e);
+    }
 
     return {
       correct: true,
@@ -501,11 +513,19 @@ export async function validatePasscode(
     }
     saveLocalTeams(teams);
 
-    // Call backend silently
-    request<ValidateResponse>("/api/validate", {
-      method: "POST",
-      body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
-    }).catch(() => {});
+    // Call backend
+    try {
+      const remoteRes = await request<ValidateResponse>("/api/validate", {
+        method: "POST",
+        body: JSON.stringify({ session_id: sessionId, node_id: nodeId, answer: passcode.trim() }),
+      });
+      return {
+        ...remoteRes,
+        available_routes: isTerminal ? [] : connectedRoutes,
+      };
+    } catch (e) {
+      console.warn("Backend validate fallback:", e);
+    }
 
     return {
       correct: false,
@@ -528,11 +548,19 @@ export async function validatePasscode(
   const nextAvailable = attemptsLeft === 2 ? 20 : attemptsLeft === 1 ? 10 : 0;
   saveLocalTeams(teams);
 
-  // Call backend silently
-  request<ValidateResponse>("/api/validate", {
-    method: "POST",
-    body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
-  }).catch(() => {});
+  // Call backend
+  try {
+    const remoteRes = await request<ValidateResponse>("/api/validate", {
+      method: "POST",
+      body: JSON.stringify({ session_id: sessionId, node_id: nodeId, answer: passcode.trim() }),
+    });
+    return {
+      ...remoteRes,
+      available_routes: [],
+    };
+  } catch (e) {
+    console.warn("Backend validate fallback:", e);
+  }
 
   return {
     correct: false,
@@ -578,19 +606,20 @@ export async function moveTeam(sessionId: string, nodeId: string, direction: Dir
     saveLocalTeams(teams);
   }
 
-  // Call backend silently
-  request<MoveResponse>("/api/move", {
-    method: "POST",
-    body: JSON.stringify({ session_id: sessionId, node_id: nodeId, direction }),
-  }).catch(() => {});
-
-  return {
-    session_id: sessionId,
-    moved_from: nodeId,
-    moved_to: nextNodeId,
-    current_node_id: nextNodeId,
-    direction,
-  };
+  try {
+    return await request<MoveResponse>("/api/move", {
+      method: "POST",
+      body: JSON.stringify({ session_id: sessionId, node_id: nodeId, direction }),
+    });
+  } catch {
+    return {
+      session_id: sessionId,
+      moved_from: nodeId,
+      moved_to: nextNodeId,
+      current_node_id: nextNodeId,
+      direction,
+    };
+  }
 }
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
@@ -614,28 +643,43 @@ export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
 }
 
 export async function fetchTeamResult(sessionId: string): Promise<TeamResultResponse> {
-  const teams = getLocalTeams();
-  const t = teams.find((item) => item.id === sessionId);
+  try {
+    const t = await request<AdminTeamOut>(`/api/team/${sessionId}`);
+    return {
+      team_name: t.team_name,
+      total_score: t.total_score,
+      rank: null,
+      completed: Boolean(t.completed),
+      completed_at: t.completed_at || null,
+      started_at: t.started_at || null,
+      path: t.path && t.path.length > 0 ? t.path : ["N01"],
+      progress: t.progress || [],
+      moves: t.moves || [],
+    };
+  } catch {
+    const teams = getLocalTeams();
+    const t = teams.find((item) => item.id === sessionId);
 
-  // Compute rank amongst completed teams
-  const completedSorted = [...teams]
-    .filter((team) => team.completed)
-    .sort((a, b) => b.total_score - a.total_score);
+    // Compute rank amongst completed teams
+    const completedSorted = [...teams]
+      .filter((team) => team.completed)
+      .sort((a, b) => b.total_score - a.total_score);
 
-  const rankIdx = completedSorted.findIndex((item) => item.id === sessionId);
-  const rank = rankIdx >= 0 ? rankIdx + 1 : null;
+    const rankIdx = completedSorted.findIndex((item) => item.id === sessionId);
+    const rank = rankIdx >= 0 ? rankIdx + 1 : null;
 
-  return {
-    team_name: t?.team_name || "Active Team",
-    total_score: t?.total_score || 0,
-    rank,
-    completed: Boolean(t?.completed),
-    completed_at: t?.completed_at || null,
-    started_at: t?.started_at || null,
-    path: t?.path || ["N01"],
-    progress: t?.progress || [],
-    moves: t?.moves || [],
-  };
+    return {
+      team_name: t?.team_name || "Active Team",
+      total_score: t?.total_score || 0,
+      rank,
+      completed: Boolean(t?.completed),
+      completed_at: t?.completed_at || null,
+      started_at: t?.started_at || null,
+      path: t?.path || ["N01"],
+      progress: t?.progress || [],
+      moves: t?.moves || [],
+    };
+  }
 }
 
 export async function fetchAdminTeams(secret: string): Promise<AdminTeamOut[]> {
