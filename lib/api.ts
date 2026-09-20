@@ -7,6 +7,8 @@ import {
   type Difficulty,
 } from "@/data/graph";
 
+import { PASSCODE_CONFIG } from "@/lib/passcodes";
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type { Direction, Difficulty, NodeType };
@@ -413,8 +415,8 @@ export async function validatePasscode(
 ): Promise<ValidateResponse> {
   const code = passcode.trim().toLowerCase();
 
-  const SUCCESS_PASSCODES = ["verified26", "solved", "sunsunsunday", "nodehunt", "siamvit"];
-  const STRIKE_PASSCODES = ["strike26", "retry", "wrong", "strike"];
+  const SUCCESS_PASSCODES = PASSCODE_CONFIG.SUCCESS_PASSCODES.map((c) => c.toLowerCase());
+  const STRIKE_PASSCODES = PASSCODE_CONFIG.STRIKE_PASSCODES.map((c) => c.toLowerCase());
 
   const isSuccess = SUCCESS_PASSCODES.includes(code);
   const isStrike = STRIKE_PASSCODES.includes(code);
