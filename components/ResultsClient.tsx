@@ -66,7 +66,7 @@ export function ResultsClient() {
                   {personalResult.total_score} <span className="text-xs font-normal text-[#8c8079]">PTS</span>
                 </div>
               </div>
-              {personalResult.rank && (
+              {personalResult.completed && personalResult.rank && (
                 <div className="px-3.5 py-1.5 rounded-xl bg-[#1d0f0c] border border-[#b43426]/40 text-[#e8b5af] font-mono text-center">
                   <span className="text-[10px] uppercase block text-[#8c8079]">Rank</span>
                   <span className="text-lg font-bold">#{personalResult.rank}</span>
@@ -95,11 +95,11 @@ export function ResultsClient() {
         </div>
       )}
 
-      {/* Leaderboard Table */}
+      {/* Leaderboard Table (ONLY COMPLETED TEAMS ARE RANKED) */}
       <div className="rounded-2xl bg-[#0e0a09]/85 border border-white/[0.08] backdrop-blur-xl overflow-hidden shadow-xl">
         <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
           <h3 className="text-xs font-mono uppercase tracking-widest font-bold text-white">
-            Completed Teams ({leaderboard.length})
+            Finished Contenders ({leaderboard.length})
           </h3>
           <Link
             href="/join"
@@ -115,7 +115,7 @@ export function ResultsClient() {
           </div>
         ) : leaderboard.length === 0 ? (
           <div className="py-14 text-center text-[#594f49] font-mono text-xs">
-            No teams have completed the tournament graph yet. Standings will appear in real time.
+            No teams have reached and completed the tournament finale (Node N08) yet.
           </div>
         ) : (
           <div className="overflow-x-auto">

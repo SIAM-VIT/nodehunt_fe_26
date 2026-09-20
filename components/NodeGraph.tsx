@@ -32,6 +32,7 @@ export function NodeGraph({
     const set = new Set<string>(visitedNodes);
     set.add(currentNodeId);
 
+    // ONLY reveal target nodes if movement is actually unlocked and outgoing routes exist!
     if (availableRoutes && availableRoutes.length > 0) {
       const outgoingEdges = HUNT_EDGES.filter((e) => e.from === currentNodeId);
       for (const route of availableRoutes) {
@@ -48,10 +49,22 @@ export function NodeGraph({
     if (adminMode) {
       return HUNT_EDGES;
     }
-    return HUNT_EDGES.filter(
-      (edge) => visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to)
-    );
-  }, [adminMode, visibleNodeIds]);
+    // Only show edges between nodes that are both visible
+    return HUNT_EDGES.filter((edge) => {
+      // Show traversed path
+      const isTraversed =
+        visitedNodes.includes(edge.from) &&
+        (visitedNodes.includes(edge.to) || edge.to === currentNodeId);
+
+      // Show newly unlocked outgoing route from the current node
+      const isUnlockedOutgoing =
+        edge.from === currentNodeId &&
+        availableRoutes &&
+        availableRoutes.some((r) => r.direction === edge.direction);
+
+      return isTraversed || isUnlockedOutgoing;
+    });
+  }, [adminMode, visitedNodes, currentNodeId, availableRoutes]);
 
   const getNodeCoords = (node: HuntNode) => {
     const cx = (node.x / 100) * 680 + 60;
@@ -60,6 +73,7 @@ export function NodeGraph({
   };
 
   const getSelectableRoute = (targetNodeId: string) => {
+    // A route is ONLY selectable if movement is unlocked and the target is directly connected from current node
     if (!availableRoutes || availableRoutes.length === 0) return null;
     const edge = HUNT_EDGES.find(
       (e) => e.from === currentNodeId && e.to === targetNodeId
@@ -132,6 +146,10 @@ export function NodeGraph({
           if (!fromNode || !toNode) return null;
 
           const isVisible = visibleEdges.includes(edge);
+          if (!adminMode && !isVisible) {
+            return null;
+          }
+
           const fromCoords = getNodeCoords(fromNode);
           const toCoords = getNodeCoords(toNode);
 
@@ -140,10 +158,6 @@ export function NodeGraph({
             (visitedNodes.includes(toNode.id) || toNode.id === currentNodeId);
 
           const selectableRoute = getSelectableRoute(toNode.id);
-
-          if (!adminMode && !isVisible) {
-            return null;
-          }
 
           let strokeColor = "#1f1a18";
           let strokeWidth = 1.5;
@@ -216,19 +230,7 @@ export function NodeGraph({
           const teamCount = teamLocations[node.id] ?? 0;
 
           if (!adminMode && !isVisible) {
-            return (
-              <g key={node.id} opacity={0.1}>
-                <circle
-                  cx={coords.cx}
-                  cy={coords.cy}
-                  r={20}
-                  fill="#0e0a09"
-                  stroke="#2c2220"
-                  strokeWidth={1}
-                  strokeDasharray="2,2"
-                />
-              </g>
-            );
+            return null; // Fog of War hides unrevealed nodes completely
           }
 
           let fillColor = "#110d0c";
@@ -258,6 +260,7 @@ export function NodeGraph({
                 selectableRoute ? "cursor-pointer" : "cursor-default"
               } transition-transform`}
               onClick={() => {
+                // Strictly disallow clicking on unselectable or disconnected nodes!
                 if (selectableRoute && onSelectRoute) {
                   onSelectRoute(selectableRoute.direction);
                 }
