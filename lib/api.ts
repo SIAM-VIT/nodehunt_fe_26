@@ -1,8 +1,15 @@
+import {
+  HUNT_NODES,
+  HUNT_EDGES,
+  getRoutePreview,
+  type Direction,
+  type NodeType,
+  type Difficulty,
+} from "@/data/graph";
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export type Direction = "left" | "right" | "continue";
-export type Difficulty = "easy" | "medium" | "hard";
-export type NodeType = "D" | "C" | "Q" | "R";
+export type { Direction, Difficulty, NodeType };
 
 export interface TeamSession {
   session_id: string;
@@ -120,50 +127,7 @@ export interface AdminTeamOut {
   progress: ProgressOut[];
 }
 
-// In-browser mock state to guarantee instant gameplay and demonstration even if external backend is offline
 const MOCK_TEAMS_KEY = "nh_mock_teams_registry";
-const MOCK_NODES_KEY = "nh_mock_nodes_state";
-
-const DEFAULT_MOCK_NODES: Record<string, any> = {
-  N01: {
-    type: "D",
-    difficulty: "easy",
-    question: "Debugging Node N01: Fix the off-by-one pointer error in the memory buffer traversal routine.",
-    answers: ["nodehunt", "siamvit", "pointer_fixed"],
-    routes: [
-      { direction: "left", type: "R", difficulty: "hard" },
-      { direction: "right", type: "Q", difficulty: "medium" },
-    ],
-  },
-  N02: {
-    type: "R",
-    difficulty: "hard",
-    question: "Riddle Node N02: I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?",
-    answers: ["echo", "nodehunt"],
-    routes: [
-      { direction: "left", type: "C", difficulty: "medium" },
-      { direction: "right", type: "C", difficulty: "easy" },
-    ],
-  },
-  N03: {
-    type: "Q",
-    difficulty: "medium",
-    question: "Quiz Node N03: Which algorithmic paradigm does Dijkstra's shortest path algorithm implement?",
-    answers: ["greedy", "nodehunt"],
-    routes: [
-      { direction: "left", type: "C", difficulty: "easy" },
-      { direction: "right", type: "C", difficulty: "hard" },
-    ],
-  },
-  N08: {
-    type: "Q",
-    difficulty: "hard",
-    question: "Final Tournament Objective Node N08: What is the chromatic number of the Petersen graph?",
-    answers: ["3", "three", "nodehunt"],
-    routes: [],
-    is_terminal: true,
-  },
-};
 
 function getLocalTeams(): AdminTeamOut[] {
   if (typeof window === "undefined") return [];
@@ -202,50 +166,75 @@ function saveLocalTeams(teams: AdminTeamOut[]) {
   localStorage.setItem(MOCK_TEAMS_KEY, JSON.stringify(teams));
 }
 
+function getTeamState(sessionId: string): AdminTeamOut | undefined {
+  const teams = getLocalTeams();
+  return teams.find((t) => t.id === sessionId);
+}
+
+function getOrInitNodeProgress(team: AdminTeamOut, nodeId: string): ProgressOut {
+  let prog = team.progress.find((p) => p.node_id === nodeId);
+  if (!prog) {
+    prog = {
+      node_id: nodeId,
+      attempts_used: 0,
+      solved: false,
+      exhausted: false,
+      movement_unlocked: false,
+      points_awarded: 0,
+      solved_at: null,
+    };
+    team.progress.push(prog);
+  }
+  return prog;
+}
+
+export function getConnectedRoutes(nodeId: string): RoutePreview[] {
+  return getRoutePreview(nodeId).map((r) => ({
+    direction: r.direction as Direction,
+    type: r.type as NodeType,
+    difficulty: r.difficulty as Difficulty,
+    terminal: r.terminal,
+  }));
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API}${path}`;
-  try {
-    const res = await fetch(url, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init?.headers ?? {}),
-      },
-    });
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      const message =
-        typeof errorData.detail === "string"
-          ? errorData.detail
-          : Array.isArray(errorData.detail)
-          ? errorData.detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ")
-          : typeof errorData.message === "string"
-          ? errorData.message
-          : `Request failed with status ${res.status}`;
-      const err = new Error(message) as Error & { status: number };
-      err.status = res.status;
-      throw err;
-    }
-
-    if (res.status === 204) {
-      return {} as T;
-    }
-
-    return res.json();
-  } catch (err: any) {
-    // If backend is unavailable, throw network error to trigger safe fallback
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const message =
+      typeof errorData.detail === "string"
+        ? errorData.detail
+        : Array.isArray(errorData.detail)
+        ? errorData.detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ")
+        : typeof errorData.message === "string"
+        ? errorData.message
+        : `Request failed with status ${res.status}`;
+    const err = new Error(message) as Error & { status: number };
+    err.status = res.status;
     throw err;
   }
+
+  if (res.status === 204) {
+    return {} as T;
+  }
+
+  return res.json();
 }
 
 export async function createTeam(teamName: string, password?: string): Promise<TeamSession> {
-  // Always record locally so admin can see plain passwords immediately
   const teams = getLocalTeams();
   const id = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `team-${Date.now()}`;
   const newTeam: AdminTeamOut = {
     id,
-    team_name: teamName,
+    team_name: teamName.trim(),
     created_at: new Date().toISOString(),
     started_at: new Date().toISOString(),
     completed_at: null,
@@ -255,12 +244,12 @@ export async function createTeam(teamName: string, password?: string): Promise<T
     is_locked: false,
     lock_reason: null,
     completed: false,
-    plain_password: password || "nodehunt2026",
+    plain_password: password?.trim() || "nodehunt2026",
     moves: [],
     progress: [],
   };
 
-  const existingIdx = teams.findIndex((t) => t.team_name.toLowerCase() === teamName.toLowerCase());
+  const existingIdx = teams.findIndex((t) => t.team_name.toLowerCase() === teamName.trim().toLowerCase());
   if (existingIdx >= 0) {
     teams[existingIdx] = newTeam;
   } else {
@@ -271,7 +260,7 @@ export async function createTeam(teamName: string, password?: string): Promise<T
   try {
     return await request<TeamSession>("/api/team", {
       method: "POST",
-      body: JSON.stringify({ team_name: teamName, password: password || null }),
+      body: JSON.stringify({ team_name: teamName.trim(), password: password?.trim() || null }),
     });
   } catch {
     return {
@@ -306,15 +295,13 @@ export async function loginTeam(teamName: string, password: string): Promise<Tea
   try {
     return await request<TeamSession>("/api/team/login", {
       method: "POST",
-      body: JSON.stringify({ team_name: teamName, password }),
+      body: JSON.stringify({ team_name: teamName.trim(), password: password.trim() }),
     });
   } catch (backendErr: any) {
-    // If backend is active and explicitly returned invalid credentials (401), rethrow
     if (backendErr.status === 401 || backendErr.status === 423) {
       throw backendErr;
     }
 
-    // Local fallback when backend service is offline
     const teams = getLocalTeams();
     const match = teams.find((t) => t.team_name.toLowerCase() === teamName.trim().toLowerCase());
     if (match) {
@@ -335,9 +322,37 @@ export async function loginTeam(teamName: string, password: string): Promise<Tea
 }
 
 export async function fetchNode(nodeId: string, sessionId: string, index = 0): Promise<NodeQuestion> {
+  const teams = getLocalTeams();
+  let team = teams.find((t) => t.id === sessionId);
+  if (!team) {
+    team = {
+      id: sessionId,
+      team_name: typeof window !== "undefined" ? localStorage.getItem("nh_team_name") || "Active Team" : "Active Team",
+      created_at: new Date().toISOString(),
+      started_at: new Date().toISOString(),
+      completed_at: null,
+      current_node_id: nodeId,
+      path: [nodeId],
+      total_score: 0,
+      is_locked: false,
+      lock_reason: null,
+      completed: false,
+      moves: [],
+      progress: [],
+    };
+    teams.push(team);
+    saveLocalTeams(teams);
+  }
+
+  const prog = getOrInitNodeProgress(team, nodeId);
+  const attemptsUsed = prog.attempts_used;
+  const attemptsLeft = Math.max(0, 3 - attemptsUsed);
+  const scoreAvailable = prog.movement_unlocked ? 0 : attemptsLeft === 3 ? 30 : attemptsLeft === 2 ? 20 : attemptsLeft === 1 ? 10 : 0;
+  const isTerminal = nodeId === "N08";
+  const connectedRoutes = getConnectedRoutes(nodeId);
+
   try {
     const data = await request<any>(`/api/node/${nodeId}?session_id=${sessionId}&index=${index}`);
-    // If question_text is an object or missing, extract cleanly
     let qText = "";
     if (typeof data.question_text === "string") {
       qText = data.question_text;
@@ -347,43 +362,46 @@ export async function fetchNode(nodeId: string, sessionId: string, index = 0): P
       qText = String(data.question_text || "");
     }
 
-    // Ensure team_name is populated if backend omitted it
-    let teamName = data.team_name;
-    if (!teamName && typeof window !== "undefined") {
-      teamName = localStorage.getItem("nh_team_name") || "";
-      if (!teamName) {
-        const teams = getLocalTeams();
-        teamName = teams.find((t) => t.id === sessionId)?.team_name || "Active Team";
-      }
-    }
-
-    return {
-      ...data,
-      team_name: teamName,
-      question_text: qText || `Active Challenge Node ${nodeId}. Follow instructions and demonstrate solution to invigilator.`,
-    };
-  } catch {
-    const teams = getLocalTeams();
-    const team = teams.find((t) => t.id === sessionId);
-    const mockNode = DEFAULT_MOCK_NODES[nodeId] || DEFAULT_MOCK_NODES.N01;
-
     return {
       node_id: nodeId,
-      node_type: mockNode.type || "D",
-      difficulty: mockNode.difficulty || "easy",
-      question_text: mockNode.question,
+      node_type: data.node_type || "D",
+      difficulty: data.difficulty || "easy",
+      question_text: qText || `Active Challenge Node ${nodeId}. Follow instructions and demonstrate solution to invigilator.`,
+      current_index: data.current_index ?? 0,
+      max_questions: data.max_questions ?? 1,
+      attempts_used: data.attempts_used ?? attemptsUsed,
+      attempts_left: data.attempts_left ?? attemptsLeft,
+      score_available: data.score_available ?? scoreAvailable,
+      movement_unlocked: Boolean(data.movement_unlocked ?? prog.movement_unlocked),
+      is_terminal: Boolean(data.is_terminal ?? isTerminal),
+      team_name: team.team_name,
+      team_score: data.team_score ?? team.total_score,
+      is_locked: Boolean(data.is_locked ?? team.is_locked),
+      completed: Boolean(data.completed ?? team.completed),
+      available_routes: (data.movement_unlocked || prog.movement_unlocked) && !isTerminal ? connectedRoutes : [],
+    };
+  } catch {
+    const nodeObj = HUNT_NODES.find((n) => n.id === nodeId);
+    return {
+      node_id: nodeId,
+      node_type: (nodeObj?.type || "D") as NodeType,
+      difficulty: (nodeObj?.difficulty || "easy") as Difficulty,
+      question_text:
+        nodeId === "N08"
+          ? "Final Tournament Objective Node N08: What is the chromatic number of the Petersen graph?"
+          : `Challenge Node ${nodeId}: Implement the optimal graph traversal algorithm with minimal memory overhead.`,
       current_index: 0,
       max_questions: 1,
-      attempts_used: 0,
-      attempts_left: 3,
-      score_available: 30,
-      movement_unlocked: false,
-      is_terminal: Boolean(mockNode.is_terminal),
-      team_name: team?.team_name || "Active Team",
-      team_score: team?.total_score || 0,
-      is_locked: false,
-      completed: Boolean(team?.completed),
-      available_routes: mockNode.routes || [],
+      attempts_used: attemptsUsed,
+      attempts_left: attemptsLeft,
+      score_available: scoreAvailable,
+      movement_unlocked: prog.movement_unlocked,
+      is_terminal: isTerminal,
+      team_name: team.team_name,
+      team_score: team.total_score,
+      is_locked: team.is_locked,
+      completed: team.completed,
+      available_routes: prog.movement_unlocked && !isTerminal ? connectedRoutes : [],
     };
   }
 }
@@ -395,148 +413,250 @@ export async function validatePasscode(
 ): Promise<ValidateResponse> {
   const code = passcode.trim().toLowerCase();
 
-  // Accepted volunteer passcodes
   const SUCCESS_PASSCODES = ["verified26", "solved", "sunsunsunday", "nodehunt", "siamvit"];
   const STRIKE_PASSCODES = ["strike26", "retry", "wrong", "strike"];
 
-  try {
-    // Send both `passcode` and `answer` fields for full backend compatibility
-    const res = await request<ValidateResponse>("/api/validate", {
+  const isSuccess = SUCCESS_PASSCODES.includes(code);
+  const isStrike = STRIKE_PASSCODES.includes(code);
+
+  if (!isSuccess && !isStrike) {
+    throw new Error("Invalid invigilator passcode. Please ask your room invigilator to verify.");
+  }
+
+  // Synchronize local state
+  const teams = getLocalTeams();
+  let team = teams.find((t) => t.id === sessionId);
+  if (!team) {
+    team = {
+      id: sessionId,
+      team_name: typeof window !== "undefined" ? localStorage.getItem("nh_team_name") || "Active Team" : "Active Team",
+      created_at: new Date().toISOString(),
+      started_at: new Date().toISOString(),
+      completed_at: null,
+      current_node_id: nodeId,
+      path: [nodeId],
+      total_score: 0,
+      is_locked: false,
+      lock_reason: null,
+      completed: false,
+      moves: [],
+      progress: [],
+    };
+    teams.push(team);
+  }
+
+  const prog = getOrInitNodeProgress(team, nodeId);
+  const isTerminal = nodeId === "N08";
+  const connectedRoutes = getConnectedRoutes(nodeId);
+
+  // If already unlocked, respond idempotently
+  if (prog.movement_unlocked) {
+    return {
+      correct: prog.solved,
+      attempts_used: prog.attempts_used,
+      attempts_left: Math.max(0, 3 - prog.attempts_used),
+      score_available: 0,
+      movement_unlocked: true,
+      points_awarded: prog.points_awarded,
+      total_score: team.total_score,
+      is_terminal: isTerminal,
+      completed: team.completed,
+      available_routes: isTerminal ? [] : connectedRoutes,
+      message: team.completed ? "Hunt completed." : "Movement already unlocked. Choose your next route.",
+    };
+  }
+
+  // Increment attempt
+  prog.attempts_used += 1;
+  const attemptsLeft = Math.max(0, 3 - prog.attempts_used);
+
+  if (isSuccess) {
+    // 1st try = 30, 2nd try = 20, 3rd try = 10
+    const points = prog.attempts_used === 1 ? 30 : prog.attempts_used === 2 ? 20 : 10;
+    prog.solved = true;
+    prog.exhausted = false;
+    prog.movement_unlocked = true;
+    prog.points_awarded = points;
+    prog.solved_at = new Date().toISOString();
+    team.total_score += points;
+
+    if (isTerminal) {
+      team.completed = true;
+      team.completed_at = new Date().toISOString();
+    }
+    saveLocalTeams(teams);
+
+    // Call backend silently
+    request<ValidateResponse>("/api/validate", {
       method: "POST",
       body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
-    });
-    return res;
-  } catch (err: any) {
-    // If backend returned a clear HTTP error, evaluate local passcodes before rejecting
-    const isSuccess = SUCCESS_PASSCODES.includes(code);
-    const isStrike = STRIKE_PASSCODES.includes(code);
+    }).catch(() => {});
 
-    if (!isSuccess && !isStrike) {
-      throw new Error("Invalid invigilator passcode. Please ask your room invigilator to verify.");
-    }
-
-    // Local client-side state machine
-    const teams = getLocalTeams();
-    const team = teams.find((t) => t.id === sessionId);
-    const isTerminal = nodeId === "N08";
-
-    if (isSuccess) {
-      const points = 30;
-      if (team) {
-        team.total_score += points;
-        if (isTerminal) team.completed = true;
-        saveLocalTeams(teams);
-      }
-      return {
-        correct: true,
-        attempts_used: 1,
-        attempts_left: 2,
-        score_available: 0,
-        movement_unlocked: true,
-        points_awarded: points,
-        total_score: team ? team.total_score : points,
-        is_terminal: isTerminal,
-        completed: isTerminal,
-        available_routes: DEFAULT_MOCK_NODES[nodeId]?.routes || [
-          { direction: "left" as Direction, type: "R" as NodeType, difficulty: "hard" as Difficulty },
-          { direction: "right" as Direction, type: "Q" as NodeType, difficulty: "medium" as Difficulty },
-        ],
-        message: `Solution verified! +${points} PTS earned. Path unlocked.`,
-      };
-    } else {
-      // Strike
-      return {
-        correct: false,
-        attempts_used: 1,
-        attempts_left: 2,
-        score_available: 20,
-        movement_unlocked: false,
-        points_awarded: 0,
-        total_score: team ? team.total_score : 0,
-        is_terminal: isTerminal,
-        completed: false,
-        available_routes: [],
-        message: "Strike recorded. 2 attempt(s) remaining.",
-      };
-    }
+    return {
+      correct: true,
+      attempts_used: prog.attempts_used,
+      attempts_left: attemptsLeft,
+      score_available: 0,
+      movement_unlocked: true,
+      points_awarded: points,
+      total_score: team.total_score,
+      is_terminal: isTerminal,
+      completed: team.completed,
+      available_routes: isTerminal ? [] : connectedRoutes,
+      message: team.completed
+        ? `Tournament completed! Solved ${nodeId} for +${points} PTS.`
+        : `Solution verified! +${points} PTS earned. Path unlocked.`,
+    };
   }
+
+  // Strike logic
+  if (prog.attempts_used >= 3) {
+    // 3 strikes exhausted: 0 points but movement unlocked!
+    prog.exhausted = true;
+    prog.solved = false;
+    prog.movement_unlocked = true;
+    prog.points_awarded = 0;
+
+    if (isTerminal) {
+      team.completed = true;
+      team.completed_at = new Date().toISOString();
+    }
+    saveLocalTeams(teams);
+
+    // Call backend silently
+    request<ValidateResponse>("/api/validate", {
+      method: "POST",
+      body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
+    }).catch(() => {});
+
+    return {
+      correct: false,
+      attempts_used: 3,
+      attempts_left: 0,
+      score_available: 0,
+      movement_unlocked: true,
+      points_awarded: 0,
+      total_score: team.total_score,
+      is_terminal: isTerminal,
+      completed: team.completed,
+      available_routes: isTerminal ? [] : connectedRoutes,
+      message: team.completed
+        ? "No attempts left. Tournament finalized with 0 PTS for this node."
+        : "All 3 attempts used. You earned 0 PTS, but forward path is now unlocked.",
+    };
+  }
+
+  // 1st or 2nd Strike: deduct available score for NEXT attempt, movement remains locked
+  const nextAvailable = attemptsLeft === 2 ? 20 : attemptsLeft === 1 ? 10 : 0;
+  saveLocalTeams(teams);
+
+  // Call backend silently
+  request<ValidateResponse>("/api/validate", {
+    method: "POST",
+    body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
+  }).catch(() => {});
+
+  return {
+    correct: false,
+    attempts_used: prog.attempts_used,
+    attempts_left: attemptsLeft,
+    score_available: nextAvailable,
+    movement_unlocked: false,
+    points_awarded: 0,
+    total_score: team.total_score,
+    is_terminal: isTerminal,
+    completed: false,
+    available_routes: [],
+    message: `Strike recorded. ${attemptsLeft} attempt(s) remaining (${nextAvailable} PTS available).`,
+  };
 }
 
 export const validateAnswer = validatePasscode;
 
 export async function moveTeam(sessionId: string, nodeId: string, direction: Direction): Promise<MoveResponse> {
-  try {
-    return await request<MoveResponse>("/api/move", {
-      method: "POST",
-      body: JSON.stringify({ session_id: sessionId, node_id: nodeId, direction }),
-    });
-  } catch {
-    const targetMap: Record<string, Record<string, string>> = {
-      N01: { left: "N02", right: "N03" },
-      N02: { left: "N04", right: "N05" },
-      N03: { left: "N05", right: "N06" },
-      N04: { left: "N07", right: "N08" },
-      N05: { left: "N08", right: "N09" },
-      N06: { left: "N09", right: "N10" },
-      N07: { continue: "N09" },
-      N09: { continue: "N08" },
-      N10: { continue: "N08" },
-    };
-    const nextNode = targetMap[nodeId]?.[direction] || "N08";
-    const teams = getLocalTeams();
-    const team = teams.find((t) => t.id === sessionId);
-    if (team) {
-      team.current_node_id = nextNode;
-      if (!team.path.includes(nextNode)) team.path.push(nextNode);
-      saveLocalTeams(teams);
-    }
-    return {
-      session_id: sessionId,
-      moved_from: nodeId,
-      moved_to: nextNode,
-      current_node_id: nextNode,
-      direction,
-    };
+  const teams = getLocalTeams();
+  const team = teams.find((t) => t.id === sessionId);
+
+  // Strictly look up outgoing edge in verified 10-node graph
+  const edge = HUNT_EDGES.find((e) => e.from === nodeId && e.direction === direction);
+  if (!edge) {
+    throw new Error(`Invalid traversal: No path '${direction}' from ${nodeId}`);
   }
+
+  const nextNodeId = edge.to;
+
+  if (team) {
+    team.current_node_id = nextNodeId;
+    if (!team.path.includes(nextNodeId)) {
+      team.path.push(nextNodeId);
+    }
+    team.moves.push({
+      from_node: nodeId,
+      to_node: nextNodeId,
+      direction,
+      moved_at: new Date().toISOString(),
+    });
+    saveLocalTeams(teams);
+  }
+
+  // Call backend silently
+  request<MoveResponse>("/api/move", {
+    method: "POST",
+    body: JSON.stringify({ session_id: sessionId, node_id: nodeId, direction }),
+  }).catch(() => {});
+
+  return {
+    session_id: sessionId,
+    moved_from: nodeId,
+    moved_to: nextNodeId,
+    current_node_id: nextNodeId,
+    direction,
+  };
 }
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
-  try {
-    return await request<LeaderboardEntry[]>("/api/leaderboard");
-  } catch {
-    const teams = getLocalTeams();
-    return teams.map((t, idx) => ({
-      rank: idx + 1,
-      team_name: t.team_name,
-      total_score: t.total_score,
-      completed: t.completed,
-      completed_at: t.completed_at,
-      path_length: t.path?.length || 1,
-      nodes_solved: t.total_score > 0 ? 1 : 0,
-      nodes_exhausted: 0,
-      wrong_attempts: 0,
-    }));
-  }
+  const localTeams = getLocalTeams();
+  // Filter for completed teams primarily, sort by highest score, then fewest wrong attempts
+  const sorted = [...localTeams]
+    .filter((t) => t.completed)
+    .sort((a, b) => b.total_score - a.total_score || (a.completed_at || "").localeCompare(b.completed_at || ""));
+
+  return sorted.map((t, idx) => ({
+    rank: idx + 1,
+    team_name: t.team_name,
+    total_score: t.total_score,
+    completed: t.completed,
+    completed_at: t.completed_at,
+    path_length: t.path?.length || 1,
+    nodes_solved: t.progress.filter((p) => p.solved).length,
+    nodes_exhausted: t.progress.filter((p) => p.exhausted).length,
+    wrong_attempts: t.progress.reduce((acc, p) => acc + (p.attempts_used - (p.solved ? 1 : 0)), 0),
+  }));
 }
 
 export async function fetchTeamResult(sessionId: string): Promise<TeamResultResponse> {
-  try {
-    return await request<TeamResultResponse>(`/api/team/${sessionId}/result`);
-  } catch {
-    const teams = getLocalTeams();
-    const t = teams.find((item) => item.id === sessionId);
-    return {
-      team_name: t?.team_name || "Active Team",
-      total_score: t?.total_score || 0,
-      rank: 1,
-      completed: Boolean(t?.completed),
-      completed_at: t?.completed_at || null,
-      started_at: t?.started_at || null,
-      path: t?.path || ["N01"],
-      progress: [],
-      moves: [],
-    };
-  }
+  const teams = getLocalTeams();
+  const t = teams.find((item) => item.id === sessionId);
+
+  // Compute rank amongst completed teams
+  const completedSorted = [...teams]
+    .filter((team) => team.completed)
+    .sort((a, b) => b.total_score - a.total_score);
+
+  const rankIdx = completedSorted.findIndex((item) => item.id === sessionId);
+  const rank = rankIdx >= 0 ? rankIdx + 1 : null;
+
+  return {
+    team_name: t?.team_name || "Active Team",
+    total_score: t?.total_score || 0,
+    rank,
+    completed: Boolean(t?.completed),
+    completed_at: t?.completed_at || null,
+    started_at: t?.started_at || null,
+    path: t?.path || ["N01"],
+    progress: t?.progress || [],
+    moves: t?.moves || [],
+  };
 }
 
 export async function fetchAdminTeams(secret: string): Promise<AdminTeamOut[]> {
@@ -545,7 +665,6 @@ export async function fetchAdminTeams(secret: string): Promise<AdminTeamOut[]> {
     const remoteTeams = await request<AdminTeamOut[]>("/api/admin/teams", {
       headers: { "x-admin-secret": secret },
     });
-    // Merge plain passwords from local registry into remote response
     return remoteTeams.map((rt) => {
       const match = localTeams.find((lt) => lt.team_name.toLowerCase() === rt.team_name.toLowerCase());
       return {
@@ -559,59 +678,47 @@ export async function fetchAdminTeams(secret: string): Promise<AdminTeamOut[]> {
 }
 
 export async function setTeamLock(secret: string, teamId: string, locked: boolean, reason?: string) {
-  try {
-    return await request<any>(`/api/admin/team/${teamId}/lock`, {
-      method: "PATCH",
-      headers: { "x-admin-secret": secret },
-      body: JSON.stringify({ locked, reason: reason || null }),
-    });
-  } catch {
-    const teams = getLocalTeams();
-    const t = teams.find((item) => item.id === teamId);
-    if (t) {
-      t.is_locked = locked;
-      t.lock_reason = locked ? reason || "Admin locked" : null;
-      saveLocalTeams(teams);
-    }
+  const teams = getLocalTeams();
+  const t = teams.find((item) => item.id === teamId);
+  if (t) {
+    t.is_locked = locked;
+    t.lock_reason = locked ? reason || "Admin locked" : null;
+    saveLocalTeams(teams);
   }
+  request<any>(`/api/admin/team/${teamId}/lock`, {
+    method: "PATCH",
+    headers: { "x-admin-secret": secret },
+    body: JSON.stringify({ locked, reason: reason || null }),
+  }).catch(() => {});
 }
 
 export async function updateTeamNameAdmin(secret: string, teamId: string, teamName: string) {
-  try {
-    return await request<any>(`/api/admin/team/${teamId}/name`, {
-      method: "PATCH",
-      headers: { "x-admin-secret": secret },
-      body: JSON.stringify({ team_name: teamName }),
-    });
-  } catch {
-    const teams = getLocalTeams();
-    const t = teams.find((item) => item.id === teamId);
-    if (t) {
-      t.team_name = teamName;
-      saveLocalTeams(teams);
-    }
+  const teams = getLocalTeams();
+  const t = teams.find((item) => item.id === teamId);
+  if (t) {
+    t.team_name = teamName;
+    saveLocalTeams(teams);
   }
+  request<any>(`/api/admin/team/${teamId}/name`, {
+    method: "PATCH",
+    headers: { "x-admin-secret": secret },
+    body: JSON.stringify({ team_name: teamName }),
+  }).catch(() => {});
 }
 
 export async function deleteOneTeam(secret: string, teamId: string) {
-  try {
-    await request<void>(`/api/admin/team/${teamId}`, {
-      method: "DELETE",
-      headers: { "x-admin-secret": secret },
-    });
-  } catch {
-    const teams = getLocalTeams().filter((t) => t.id !== teamId);
-    saveLocalTeams(teams);
-  }
+  const teams = getLocalTeams().filter((t) => t.id !== teamId);
+  saveLocalTeams(teams);
+  request<void>(`/api/admin/team/${teamId}`, {
+    method: "DELETE",
+    headers: { "x-admin-secret": secret },
+  }).catch(() => {});
 }
 
 export async function deleteAllTeams(secret: string) {
-  try {
-    await request<void>("/api/admin/teams", {
-      method: "DELETE",
-      headers: { "x-admin-secret": secret },
-    });
-  } catch {
-    saveLocalTeams([]);
-  }
+  saveLocalTeams([]);
+  request<void>("/api/admin/teams", {
+    method: "DELETE",
+    headers: { "x-admin-secret": secret },
+  }).catch(() => {});
 }
