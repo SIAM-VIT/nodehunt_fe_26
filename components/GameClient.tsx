@@ -21,6 +21,7 @@ import { DIFFICULTY_LABELS, NODE_TYPE_LABELS } from "@/data/graph";
 export function GameClient() {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [teamName, setTeamName] = useState<string>("");
   const [nodeData, setNodeData] = useState<NodeQuestion | null>(null);
   const [passcode, setPasscode] = useState("");
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,10 @@ export function GameClient() {
       const data = await fetchNode(nodeId, sid);
       setNodeData(data);
       localStorage.setItem(STORAGE_CURRENT_NODE, data.node_id);
-      localStorage.setItem(STORAGE_TEAM_NAME, data.team_name);
+
+      const resolvedName = data.team_name || localStorage.getItem(STORAGE_TEAM_NAME) || "Team";
+      setTeamName(resolvedName);
+      localStorage.setItem(STORAGE_TEAM_NAME, resolvedName);
 
       if (data.is_locked) {
         router.push("/locked");
@@ -57,7 +61,8 @@ export function GameClient() {
         router.push("/results");
         return;
       }
-      setError(err.message || "Failed to load node challenge");
+      const rawMsg = err.message || "Failed to load node challenge";
+      setError(typeof rawMsg === "string" ? rawMsg : JSON.stringify(rawMsg));
     } finally {
       setLoading(false);
     }
@@ -65,6 +70,11 @@ export function GameClient() {
 
   useEffect(() => {
     const sid = localStorage.getItem(STORAGE_SESSION_ID);
+    const storedTeamName = localStorage.getItem(STORAGE_TEAM_NAME);
+    if (storedTeamName) {
+      setTeamName(storedTeamName);
+    }
+
     if (!sid) {
       router.push("/join");
       return;
@@ -73,6 +83,10 @@ export function GameClient() {
 
     fetchTeamResult(sid)
       .then((teamRes) => {
+        if (teamRes.team_name) {
+          setTeamName(teamRes.team_name);
+          localStorage.setItem(STORAGE_TEAM_NAME, teamRes.team_name);
+        }
         if (teamRes.completed) {
           router.push("/results");
           return;
@@ -124,7 +138,8 @@ export function GameClient() {
         await loadNodeData(sessionId, nodeData.node_id);
       }
     } catch (err: any) {
-      setError(err.message || "Passcode verification failed");
+      const rawMsg = err.message || "Passcode verification failed";
+      setError(typeof rawMsg === "string" ? rawMsg : JSON.stringify(rawMsg));
     } finally {
       setSubmitting(false);
     }
@@ -140,7 +155,8 @@ export function GameClient() {
       setFeedback(null);
       await loadNodeData(sessionId, res.moved_to);
     } catch (err: any) {
-      setError(err.message || "Failed to traverse to next node");
+      const rawMsg = err.message || "Failed to traverse to next node";
+      setError(typeof rawMsg === "string" ? rawMsg : JSON.stringify(rawMsg));
     } finally {
       setMoving(false);
     }
@@ -164,13 +180,15 @@ export function GameClient() {
         <p className="text-xs text-[#8c8079] mb-6 font-mono">{error || "Could not retrieve node challenge"}</p>
         <button
           onClick={() => sessionId && loadNodeData(sessionId, localStorage.getItem(STORAGE_CURRENT_NODE) || "N01")}
-          className="px-5 py-2.5 bg-[#b43426] hover:bg-[#c84332] text-white font-mono text-xs uppercase tracking-wider rounded-xl transition-all"
+          className="px-5 py-2.5 bg-[#b43426] hover:bg-[#c84332] text-white font-mono text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
         >
           Retry Connection
         </button>
       </div>
     );
   }
+
+  const displayName = teamName || nodeData.team_name || "Team";
 
   return (
     <div className="container mx-auto px-4 py-4 max-w-7xl">
@@ -179,11 +197,11 @@ export function GameClient() {
         {/* Team Identity */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#1d0f0c] border border-[#b43426]/40 flex items-center justify-center text-[#e8b5af] font-mono font-bold text-sm shadow-inner">
-            {nodeData.team_name ? nodeData.team_name[0].toUpperCase() : "T"}
+            {displayName[0].toUpperCase()}
           </div>
           <div>
             <div className="text-[10px] uppercase font-mono tracking-wider text-[#8c8079]">Team</div>
-            <div className="text-base font-bold text-[#f8f6f5] tracking-tight">{nodeData.team_name}</div>
+            <div className="text-base font-bold text-[#f8f6f5] tracking-tight">{displayName}</div>
           </div>
         </div>
 

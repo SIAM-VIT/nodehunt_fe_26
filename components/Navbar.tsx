@@ -19,7 +19,7 @@ export function Navbar() {
           <span className="font-mono tracking-wider font-bold text-white text-sm">NODEHUNT</span>
         </Link>
         <div className="nav-links">
-          <Link href="/game">Arena</Link>
+          <Link href="/">Arena</Link>
           <Link href="/results">Results</Link>
           <Link href="/admin">Admin</Link>
           <Link className="nav-cta" href="/join">Enter Arena</Link>
