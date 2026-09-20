@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
 import {
   fetchAdminTeams,
   setTeamLock,
   updateTeamNameAdmin,
   deleteOneTeam,
   deleteAllTeams,
+  createTeam,
   type AdminTeamOut,
 } from "@/lib/api";
-import { STORAGE_ADMIN_SECRET } from "@/lib/constants";
 import { NodeGraph } from "./NodeGraph";
 import {
   LayoutDashboard,
@@ -25,11 +24,11 @@ import {
   ShieldAlert,
   Search,
   Activity,
-  Layers,
   ChevronRight,
+  UserPlus,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "teams" | "radar" | "settings";
+type AdminTab = "dashboard" | "teams" | "create" | "radar";
 
 export function AdminPreview() {
   const [secret, setSecret] = useState("");
@@ -41,13 +40,13 @@ export function AdminPreview() {
   const [error, setError] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_ADMIN_SECRET);
-    if (saved) {
-      setSecret(saved);
-      loadDashboard(saved);
-    }
-  }, []);
+  // New Team Form State
+  const [newTeamName, setNewTeamName] = useState("");
+  const [newTeamPassword, setNewTeamPassword] = useState("");
+  const [creatingTeam, setCreatingTeam] = useState(false);
+
+  // Notice: We intentionally do NOT restore secret from localStorage.
+  // The admin must enter the password every single time.
 
   const loadDashboard = async (admSecret: string) => {
     setLoading(true);
@@ -56,7 +55,6 @@ export function AdminPreview() {
       const data = await fetchAdminTeams(admSecret);
       setTeams(data);
       setAuthed(true);
-      localStorage.setItem(STORAGE_ADMIN_SECRET, admSecret);
     } catch (err: any) {
       setError(err.message || "Failed to authenticate admin secret");
       setAuthed(false);
@@ -69,6 +67,28 @@ export function AdminPreview() {
     e.preventDefault();
     if (!secret.trim()) return;
     loadDashboard(secret.trim());
+  };
+
+  const handleCreateTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTeamName.trim() || !newTeamPassword.trim()) {
+      setError("Please provide both Team Name and Team Password.");
+      return;
+    }
+    setCreatingTeam(true);
+    setError(null);
+    try {
+      await createTeam(newTeamName.trim(), newTeamPassword.trim());
+      setActionMsg(`Team "${newTeamName.trim()}" successfully created! Passcode: ${newTeamPassword.trim()}`);
+      setNewTeamName("");
+      setNewTeamPassword("");
+      await loadDashboard(secret);
+      setActiveTab("teams");
+    } catch (err: any) {
+      setError(err.message || "Failed to create team");
+    } finally {
+      setCreatingTeam(false);
+    }
   };
 
   const handleToggleLock = async (team: AdminTeamOut) => {
@@ -146,7 +166,7 @@ export function AdminPreview() {
     return { total, completed, locked, active, avgScore };
   }, [teams]);
 
-  // Login view
+  // Login view - password asked every time
   if (!authed) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-4">
@@ -160,7 +180,7 @@ export function AdminPreview() {
                 NodeHunt Command Deck
               </h2>
               <p className="text-xs text-[#8c8079] font-mono">
-                Tournament Invigilation & Control Panel
+                Invigilation & Tournament Control
               </p>
             </div>
           </div>
@@ -174,12 +194,12 @@ export function AdminPreview() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-mono uppercase tracking-wider text-[#8c8079] mb-1.5">
-                Admin Secret Key
+                Admin Password
               </label>
               <input
                 type="password"
                 required
-                placeholder="Enter X-Admin-Secret..."
+                placeholder="Enter admin password..."
                 value={secret}
                 onChange={(e) => setSecret(e.target.value)}
                 className="w-full px-4 py-2.5 bg-[#050505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-mono text-sm placeholder:text-[#594f49] focus:outline-none"
@@ -238,6 +258,24 @@ export function AdminPreview() {
                 <ChevronRight className="w-3.5 h-3.5 opacity-60" />
               </button>
 
+              <div className="text-[10px] uppercase tracking-wider text-[#594f49] px-3 pt-3 pb-1 font-semibold">
+                Management
+              </div>
+              <button
+                onClick={() => setActiveTab("create")}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                  activeTab === "create"
+                    ? "bg-[#1d0f0c] text-[#e06655] font-bold border border-[#b43426]/40"
+                    : "text-[#8c8079] hover:text-white hover:bg-white/[0.03]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <UserPlus className="w-4 h-4 text-[#e06655]" />
+                  <span>Create Team</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 opacity-60" />
+              </button>
+
               <button
                 onClick={() => setActiveTab("teams")}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
@@ -248,7 +286,7 @@ export function AdminPreview() {
               >
                 <div className="flex items-center gap-2.5">
                   <Users className="w-4 h-4" />
-                  <span>Teams Management</span>
+                  <span>Teams Roster</span>
                 </div>
                 <span className="px-1.5 py-0.5 rounded text-[10px] bg-white/[0.05] text-[#8c8079]">
                   {teams.length}
@@ -271,7 +309,7 @@ export function AdminPreview() {
               </button>
 
               <div className="text-[10px] uppercase tracking-wider text-[#594f49] px-3 pt-4 pb-1 font-semibold">
-                Emergency Actions
+                Emergency Controls
               </div>
               <button
                 onClick={() => loadDashboard(secret)}
@@ -289,7 +327,7 @@ export function AdminPreview() {
               </button>
               <button
                 onClick={() => {
-                  localStorage.removeItem(STORAGE_ADMIN_SECRET);
+                  setSecret("");
                   setAuthed(false);
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-left rounded-xl text-[#594f49] hover:text-[#8c8079] transition-all cursor-pointer pt-2"
@@ -308,6 +346,13 @@ export function AdminPreview() {
             <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-mono flex items-center justify-between">
               <span>✓ {actionMsg}</span>
               <button onClick={() => setActionMsg(null)} className="text-emerald-400 text-sm">✕</button>
+            </div>
+          )}
+
+          {error && (
+            <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs font-mono flex items-center justify-between">
+              <span>✕ {error}</span>
+              <button onClick={() => setError(null)} className="text-rose-400 text-sm">✕</button>
             </div>
           )}
 
@@ -339,7 +384,7 @@ export function AdminPreview() {
             </div>
           </div>
 
-          {/* TAB 1: DASHBOARD (Hybrid Overview + Quick Table) */}
+          {/* TAB 1: DASHBOARD */}
           {activeTab === "dashboard" && (
             <div className="space-y-5">
               <div className="grid lg:grid-cols-12 gap-5 items-start">
@@ -361,7 +406,7 @@ export function AdminPreview() {
                     </h3>
                     <button
                       onClick={() => setActiveTab("teams")}
-                      className="text-xs font-mono text-[#e06655] hover:underline"
+                      className="text-xs font-mono text-[#e06655] hover:underline cursor-pointer"
                     >
                       View All Teams →
                     </button>
@@ -397,6 +442,66 @@ export function AdminPreview() {
             </div>
           )}
 
+          {/* TAB: CREATE TEAM (Only Admin Can Create Teams) */}
+          {activeTab === "create" && (
+            <div className="p-7 rounded-2xl bg-[#0c0807]/90 border border-white/[0.08] backdrop-blur-xl shadow-xl max-w-xl">
+              <div className="flex items-center gap-3 pb-4 mb-6 border-b border-white/[0.06]">
+                <div className="w-9 h-9 rounded-xl bg-[#1d0f0c] border border-[#b43426]/40 flex items-center justify-center text-[#e06655]">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
+                    Register New Team
+                  </h3>
+                  <p className="text-xs text-[#8c8079] font-mono">
+                    Participant creation is restricted to invigilators. Teams will use these credentials to log in.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleCreateTeam} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[#8c8079] mb-1.5">
+                    Team Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newTeamName}
+                    onChange={(e) => setNewTeamName(e.target.value)}
+                    placeholder="e.g. CyberVanguards"
+                    className="w-full px-4 py-2.5 bg-[#050505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-sans text-sm focus:outline-none placeholder:text-[#594f49]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[#8c8079] mb-1.5">
+                    Team Password / Access Token
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newTeamPassword}
+                    onChange={(e) => setNewTeamPassword(e.target.value)}
+                    placeholder="e.g. hunt2026pass"
+                    className="w-full px-4 py-2.5 bg-[#050505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-mono text-sm focus:outline-none placeholder:text-[#594f49]"
+                  />
+                  <p className="text-[11px] text-[#594f49] font-mono mt-1">
+                    Provide this password directly to the team participants for arena entry.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={creatingTeam}
+                  className="w-full mt-2 py-3 bg-[#b43426] hover:bg-[#c84332] text-white font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition-all shadow-md shadow-[#b43426]/20 disabled:opacity-50 cursor-pointer"
+                >
+                  {creatingTeam ? "Provisioning Team..." : "Create Team Credentials →"}
+                </button>
+              </form>
+            </div>
+          )}
+
           {/* TAB 2: TEAMS MANAGEMENT TABLE */}
           {activeTab === "teams" && (
             <div className="rounded-2xl bg-[#0c0807]/90 border border-white/[0.08] backdrop-blur-xl overflow-hidden shadow-2xl">
@@ -407,15 +512,24 @@ export function AdminPreview() {
                   <span>Registered Contenders ({filteredTeams.length})</span>
                 </div>
 
-                <div className="relative w-full sm:w-64">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-[#594f49]" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search team or node..."
-                    className="w-full pl-9 pr-3 py-1.5 bg-[#050505] border border-white/[0.08] focus:border-[#b43426] rounded-xl text-white text-xs font-mono focus:outline-none placeholder:text-[#594f49]"
-                  />
+                <div className="flex items-center gap-3">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-[#594f49]" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search team or node..."
+                      className="w-full pl-9 pr-3 py-1.5 bg-[#050505] border border-white/[0.08] focus:border-[#b43426] rounded-xl text-white text-xs font-mono focus:outline-none placeholder:text-[#594f49]"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("create")}
+                    className="px-3 py-1.5 bg-[#b43426] hover:bg-[#c84332] text-white rounded-xl text-xs font-mono font-bold tracking-wider uppercase transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>New Team</span>
+                  </button>
                 </div>
               </div>
 
