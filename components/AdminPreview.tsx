@@ -8,7 +8,9 @@ import {
   deleteOneTeam,
   deleteAllTeams,
   createTeam,
+  fetchLeaderboard,
   type AdminTeamOut,
+  type LeaderboardEntry,
 } from "@/lib/api";
 import { NodeGraph } from "./NodeGraph";
 import {
@@ -27,14 +29,16 @@ import {
   ChevronRight,
   UserPlus,
   Key,
+  Trophy,
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "teams" | "create" | "radar";
+type AdminTab = "dashboard" | "teams" | "create" | "radar" | "standings";
 
 export function AdminPreview() {
   const [secret, setSecret] = useState("");
   const [authed, setAuthed] = useState(false);
   const [teams, setTeams] = useState<AdminTeamOut[]>([]);
+  const [officialLeaderboard, setOfficialLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,15 +50,16 @@ export function AdminPreview() {
   const [newTeamPassword, setNewTeamPassword] = useState("");
   const [creatingTeam, setCreatingTeam] = useState(false);
 
-  // Notice: We intentionally do NOT restore secret from localStorage.
-  // The admin must enter the password every single time.
-
   const loadDashboard = async (admSecret: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchAdminTeams(admSecret);
-      setTeams(data);
+      const [teamsData, lbData] = await Promise.all([
+        fetchAdminTeams(admSecret),
+        fetchLeaderboard(),
+      ]);
+      setTeams(teamsData);
+      setOfficialLeaderboard(lbData);
       setAuthed(true);
     } catch (err: any) {
       setError(err.message || "Failed to authenticate admin secret");
@@ -165,6 +170,12 @@ export function AdminPreview() {
     const active = total - completed;
     const avgScore = total > 0 ? Math.round(teams.reduce((acc, t) => acc + t.total_score, 0) / total) : 0;
     return { total, completed, locked, active, avgScore };
+  }, [teams]);
+
+  // Synchronized Leading Contenders:
+  // Shows teams sorted by highest total score first, matching /results ranking
+  const synchronizedRankedTeams = useMemo(() => {
+    return [...teams].sort((a, b) => b.total_score - a.total_score || (a.completed_at || "").localeCompare(b.completed_at || ""));
   }, [teams]);
 
   // Login view - password asked every time
@@ -295,6 +306,23 @@ export function AdminPreview() {
               </button>
 
               <button
+                onClick={() => setActiveTab("standings")}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                  activeTab === "standings"
+                    ? "bg-[#1d0f0c] text-[#e06655] font-bold border border-[#b43426]/40"
+                    : "text-[#8c8079] hover:text-white hover:bg-white/[0.03]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Trophy className="w-4 h-4 text-[#d9822b]" />
+                  <span>Live Standings</span>
+                </div>
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-[#291708] text-[#fcd34d]">
+                  {officialLeaderboard.length}
+                </span>
+              </button>
+
+              <button
                 onClick={() => setActiveTab("radar")}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
                   activeTab === "radar"
@@ -385,7 +413,7 @@ export function AdminPreview() {
             </div>
           </div>
 
-          {/* TAB 1: DASHBOARD */}
+          {/* TAB 1: DASHBOARD (Synchronized Score Ranking) */}
           {activeTab === "dashboard" && (
             <div className="space-y-5">
               <div className="grid lg:grid-cols-12 gap-5 items-start">
@@ -398,47 +426,128 @@ export function AdminPreview() {
                   <NodeGraph adminMode={true} teamLocations={teamLocations} compact={true} />
                 </div>
 
-                {/* Quick Action / Top Ranking Summary */}
+                {/* Leading Contenders - Synchronized with live score & completion */}
                 <div className="lg:col-span-7 p-5 rounded-2xl bg-[#0c0807]/80 border border-white/[0.08] backdrop-blur-xl space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                     <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-white flex items-center gap-2">
                       <Activity className="w-4 h-4 text-[#e06655]" />
-                      Leading Contenders
+                      Leading Contenders (Score Ranked)
                     </h3>
                     <button
-                      onClick={() => setActiveTab("teams")}
+                      onClick={() => setActiveTab("standings")}
                       className="text-xs font-mono text-[#e06655] hover:underline cursor-pointer"
                     >
-                      View All Teams →
+                      View Finished Standings →
                     </button>
                   </div>
 
                   <div className="space-y-2.5">
-                    {teams.slice(0, 5).map((team, idx) => (
+                    {synchronizedRankedTeams.slice(0, 5).map((team, idx) => (
                       <div
                         key={team.id}
-                        className="p-3 rounded-xl bg-[#050505] border border-white/[0.05] flex items-center justify-between text-xs font-mono"
+                        className="p-3 rounded-xl bg-[#050505] border border-white/[0.05] flex items-center justify-between text-xs font-mono hover:border-white/[0.1] transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="w-5 text-[#8c8079] font-bold">#{idx + 1}</span>
+                          <span className={`w-5 font-bold ${idx === 0 ? "text-[#fcd34d]" : idx === 1 ? "text-slate-300" : idx === 2 ? "text-amber-600" : "text-[#8c8079]"}`}>
+                            #{idx + 1}
+                          </span>
                           <div>
-                            <div className="font-sans font-bold text-white text-sm">{team.team_name}</div>
-                            <div className="text-[10px] text-[#594f49]">Node {team.current_node_id}</div>
+                            <div className="font-sans font-bold text-white text-sm flex items-center gap-2">
+                              <span>{team.team_name}</span>
+                              {team.completed && (
+                                <span className="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded bg-emerald-950/70 border border-emerald-500/30 text-emerald-300">
+                                  FINISHER
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-[#594f49]">
+                              {team.completed ? "Reached Finale (N08)" : `On Node ${team.current_node_id}`}
+                            </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-[#e06655] font-bold">{team.total_score} PTS</div>
-                          <div className="text-[10px] text-[#8c8079]">{team.path?.length || 1} steps</div>
+                          <div className="text-[#e06655] font-bold text-sm">{team.total_score} PTS</div>
+                          <div className="text-[10px] text-[#8c8079]">{team.path?.length || 1} steps traversed</div>
                         </div>
                       </div>
                     ))}
-                    {teams.length === 0 && (
+                    {synchronizedRankedTeams.length === 0 && (
                       <div className="py-8 text-center text-[#594f49] font-mono text-xs">
                         No teams registered yet.
                       </div>
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: STANDINGS (Synchronized Exact View as /results) */}
+          {activeTab === "standings" && (
+            <div className="rounded-2xl bg-[#0c0807]/90 border border-white/[0.08] backdrop-blur-xl overflow-hidden shadow-2xl space-y-0">
+              <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-mono uppercase tracking-wider font-bold text-white flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-[#d9822b]" />
+                    Official Tournament Standings (Synchronized with /results)
+                  </h3>
+                  <p className="text-[11px] text-[#8c8079] font-mono mt-0.5">
+                    Teams that successfully reached and resolved the finale (Node N08)
+                  </p>
+                </div>
+                <button
+                  onClick={() => loadDashboard(secret)}
+                  className="px-3 py-1 bg-[#1d0f0c] hover:bg-[#2b1612] text-[#e06655] rounded-lg text-xs font-mono font-bold tracking-wider uppercase transition-all border border-[#b43426]/30 cursor-pointer flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Sync Standings</span>
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-mono text-xs">
+                  <thead className="bg-[#050505] text-[#8c8079] uppercase tracking-wider text-[11px] border-b border-white/[0.06]">
+                    <tr>
+                      <th className="py-3 px-4">Rank</th>
+                      <th className="py-3 px-4">Team</th>
+                      <th className="py-3 px-4 text-center">Score</th>
+                      <th className="py-3 px-4 text-center">Solved</th>
+                      <th className="py-3 px-4 text-center">Steps</th>
+                      <th className="py-3 px-4 text-right">Finish Time</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04] text-[#d1c7c2]">
+                    {officialLeaderboard.map((entry) => (
+                      <tr key={entry.rank} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-4 font-bold text-sm">
+                          {entry.rank === 1 ? "🥇 #1" : entry.rank === 2 ? "🥈 #2" : entry.rank === 3 ? "🥉 #3" : `#${entry.rank}`}
+                        </td>
+                        <td className="py-3 px-4 font-sans font-bold text-white text-sm">
+                          {entry.team_name}
+                        </td>
+                        <td className="py-3 px-4 text-center font-bold text-[#e06655] text-sm">
+                          {entry.total_score} PTS
+                        </td>
+                        <td className="py-3 px-4 text-center text-emerald-400 font-bold">
+                          {entry.nodes_solved}
+                        </td>
+                        <td className="py-3 px-4 text-center text-[#8c8079]">
+                          {entry.path_length}
+                        </td>
+                        <td className="py-3 px-4 text-right text-[#8c8079]">
+                          {entry.completed_at ? new Date(entry.completed_at).toLocaleTimeString() : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                    {officialLeaderboard.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center text-[#594f49] font-mono text-xs">
+                          No teams have completed the tournament graph yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
