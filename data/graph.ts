@@ -32,7 +32,7 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
 };
 
 /**
- * Confirmed 10-node tournament graph from the design whiteboard:
+ * 10-node tournament graph:
  * N01 (D, Medium) - Start
  * N02 (C, Easy)
  * N03 (R, Medium)
@@ -40,9 +40,9 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
  * N05 (C, Medium)
  * N06 (D, Medium)
  * N07 (D, Easy)
- * N08 (Q, Hard) - Terminal / Finale (Double Circle)
+ * N08 (C, Easy) [formerly N10, intermediary]
  * N09 (R, Medium)
- * N10 (C, Easy)
+ * N10 (Q, Hard) - Terminal / Finale Node 10
  */
 export const HUNT_NODES: HuntNode[] = [
   { id: "N01", type: "D", difficulty: "medium", x: 50, y: 8, start: true },
@@ -52,9 +52,9 @@ export const HUNT_NODES: HuntNode[] = [
   { id: "N05", type: "C", difficulty: "medium", x: 50, y: 44 },
   { id: "N06", type: "D", difficulty: "medium", x: 78, y: 44 },
   { id: "N07", type: "D", difficulty: "easy", x: 18, y: 68 },
-  { id: "N08", type: "Q", difficulty: "hard", x: 42, y: 88, terminal: true },
+  { id: "N08", type: "C", difficulty: "easy", x: 82, y: 68 },
   { id: "N09", type: "R", difficulty: "medium", x: 64, y: 88 },
-  { id: "N10", type: "C", difficulty: "easy", x: 82, y: 68 },
+  { id: "N10", type: "Q", difficulty: "hard", x: 42, y: 88, terminal: true },
 ];
 
 export const HUNT_EDGES: HuntEdge[] = [
@@ -66,13 +66,13 @@ export const HUNT_EDGES: HuntEdge[] = [
   { from: "N03", to: "N06", direction: "right" },
   { from: "N04", to: "N07", direction: "left" },
   { from: "N04", to: "N06", direction: "right" },
-  { from: "N05", to: "N08", direction: "left" },
+  { from: "N05", to: "N10", direction: "left" },
   { from: "N05", to: "N09", direction: "right" },
   { from: "N06", to: "N05", direction: "left" },
-  { from: "N06", to: "N10", direction: "right" },
+  { from: "N06", to: "N08", direction: "right" },
   { from: "N07", to: "N09", direction: "continue" },
-  { from: "N09", to: "N08", direction: "continue" },
-  { from: "N10", to: "N09", direction: "continue" },
+  { from: "N08", to: "N09", direction: "continue" },
+  { from: "N09", to: "N10", direction: "continue" },
 ];
 
 export function getNode(id: string): HuntNode | undefined {

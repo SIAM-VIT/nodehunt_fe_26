@@ -121,6 +121,7 @@ NodeHunt_FE_26/
 ├── lib/
 │   ├── api.ts                 # API client, network resilience, and state handling
 │   ├── constants.ts           # Centralized session storage keys
+│   ├── passcodes.ts           # Master configuration for invigilator verification
 │   └── utils.ts               # Tailwind class merging helper (cn)
 └── public/
     └── siamvit-logo-white.png # SIAM-VIT equation typography logo

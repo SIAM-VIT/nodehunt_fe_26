@@ -326,7 +326,7 @@ export async function fetchNode(nodeId: string, sessionId: string, index = 0): P
   const attemptsUsed = prog.attempts_used;
   const attemptsLeft = Math.max(0, 3 - attemptsUsed);
   const scoreAvailable = prog.movement_unlocked ? 0 : attemptsLeft === 3 ? 30 : attemptsLeft === 2 ? 20 : attemptsLeft === 1 ? 10 : 0;
-  const isTerminal = nodeId === "N08";
+  const isTerminal = nodeId === "N10";
   const connectedRoutes = getConnectedRoutes(nodeId);
 
   try {
@@ -365,8 +365,8 @@ export async function fetchNode(nodeId: string, sessionId: string, index = 0): P
       node_type: (nodeObj?.type || "D") as NodeType,
       difficulty: (nodeObj?.difficulty || "easy") as Difficulty,
       question_text:
-        nodeId === "N08"
-          ? "Final Tournament Objective Node N08: What is the chromatic number of the Petersen graph?"
+        nodeId === "N10"
+          ? "Final Tournament Objective Node N10: What is the chromatic number of the Petersen graph?"
           : `Challenge Node ${nodeId}: Implement the optimal graph traversal algorithm with minimal memory overhead.`,
       current_index: 0,
       max_questions: 1,
@@ -424,7 +424,7 @@ export async function validatePasscode(
   }
 
   const prog = getOrInitNodeProgress(team, nodeId);
-  const isTerminal = nodeId === "N08";
+  const isTerminal = nodeId === "N10";
   const connectedRoutes = getConnectedRoutes(nodeId);
 
   // If already unlocked, respond idempotently
@@ -468,7 +468,7 @@ export async function validatePasscode(
     try {
       const remoteRes = await request<ValidateResponse>("/api/validate", {
         method: "POST",
-        body: JSON.stringify({ session_id: sessionId, node_id: nodeId, answer: passcode.trim() }),
+        body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
       });
       if (remoteRes.total_score !== undefined) {
         team.total_score = remoteRes.total_score;
@@ -517,7 +517,7 @@ export async function validatePasscode(
     try {
       const remoteRes = await request<ValidateResponse>("/api/validate", {
         method: "POST",
-        body: JSON.stringify({ session_id: sessionId, node_id: nodeId, answer: passcode.trim() }),
+        body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
       });
       return {
         ...remoteRes,
@@ -552,7 +552,7 @@ export async function validatePasscode(
   try {
     const remoteRes = await request<ValidateResponse>("/api/validate", {
       method: "POST",
-      body: JSON.stringify({ session_id: sessionId, node_id: nodeId, answer: passcode.trim() }),
+      body: JSON.stringify({ session_id: sessionId, node_id: nodeId, passcode: passcode.trim(), answer: passcode.trim() }),
     });
     return {
       ...remoteRes,
@@ -696,7 +696,7 @@ export async function fetchAdminTeams(secret: string): Promise<AdminTeamOut[]> {
       };
     });
   } catch (err) {
-    throw err;
+    return localTeams;
   }
 }
 

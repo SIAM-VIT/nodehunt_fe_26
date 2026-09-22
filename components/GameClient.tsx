@@ -15,7 +15,6 @@ import {
   STORAGE_CURRENT_NODE,
   STORAGE_TEAM_NAME,
 } from "@/lib/constants";
-import { NodeGraph } from "./NodeGraph";
 import { DIFFICULTY_LABELS, NODE_TYPE_LABELS } from "@/data/graph";
 
 export function GameClient() {
@@ -49,7 +48,7 @@ export function GameClient() {
       }
 
       if (data.completed) {
-        router.push("/results");
+        router.push("/winner");
         return;
       }
     } catch (err: any) {
@@ -58,7 +57,7 @@ export function GameClient() {
         return;
       }
       if (err.message?.includes("completed")) {
-        router.push("/results");
+        router.push("/winner");
         return;
       }
       const rawMsg = err.message || "Failed to load node challenge";
@@ -88,7 +87,7 @@ export function GameClient() {
           localStorage.setItem(STORAGE_TEAM_NAME, teamRes.team_name);
         }
         if (teamRes.completed) {
-          router.push("/results");
+          router.push("/winner");
           return;
         }
         const path = teamRes.path && teamRes.path.length > 0 ? teamRes.path : ["N01"];
@@ -133,7 +132,7 @@ export function GameClient() {
       }
 
       if (res.completed) {
-        setTimeout(() => router.push("/results"), 1200);
+        setTimeout(() => router.push("/winner"), 1200);
       } else {
         await loadNodeData(sessionId, nodeData.node_id);
       }
@@ -165,8 +164,8 @@ export function GameClient() {
   if (loading && !nodeData) {
     return (
       <div className="min-h-[75vh] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-2 border-[#b43426]/30 border-t-[#c84332] animate-spin" />
-        <p className="mt-4 font-mono text-xs uppercase tracking-widest text-[#8c8079]">
+        <div className="w-12 h-12 rounded-full border-3 border-[#3e3e42] border-t-[#007acc] animate-spin" />
+        <p className="mt-5 font-mono text-sm uppercase tracking-widest text-[#9cdcfe]">
           Synchronizing Node State...
         </p>
       </div>
@@ -175,12 +174,12 @@ export function GameClient() {
 
   if (!nodeData) {
     return (
-      <div className="max-w-md mx-auto my-16 p-8 bg-[#0e0a09]/90 border border-white/[0.08] rounded-2xl text-center">
-        <h3 className="text-lg font-bold text-[#f8f6f5] mb-2">Connection Lost</h3>
-        <p className="text-xs text-[#8c8079] mb-6 font-mono">{error || "Could not retrieve node challenge"}</p>
+      <div className="max-w-md mx-auto my-16 p-8 bg-[#252526] border border-[#3e3e42] rounded-2xl text-center">
+        <h3 className="text-xl font-bold text-[#ffffff] mb-2 font-mono">Connection Lost</h3>
+        <p className="text-sm text-[#858585] mb-6 font-mono">{error || "Could not retrieve node challenge"}</p>
         <button
           onClick={() => sessionId && loadNodeData(sessionId, localStorage.getItem(STORAGE_CURRENT_NODE) || "N01")}
-          className="px-5 py-2.5 bg-[#b43426] hover:bg-[#c84332] text-white font-mono text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+          className="px-6 py-3 bg-[#007acc] hover:bg-[#1f8ad2] text-white font-mono text-sm uppercase tracking-wider rounded-xl transition-all cursor-pointer font-bold shadow-md shadow-[#007acc]/30"
         >
           Retry Connection
         </button>
@@ -191,217 +190,196 @@ export function GameClient() {
   const displayName = teamName || nodeData.team_name || "Team";
 
   return (
-    <div className="container mx-auto px-4 py-4 max-w-7xl">
-      {/* Top Header Bar */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-[#0e0a09]/80 border border-white/[0.08] backdrop-blur-xl mb-6 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+    <div className="container mx-auto px-4 sm:px-6 py-6 max-w-6xl">
+      {/* Top Header Bar - Full Width, Clear VS Code Style */}
+      <div className="p-6 rounded-2xl bg-[#252526] border border-[#3e3e42] mb-8 flex flex-wrap items-center justify-between gap-6 shadow-2xl">
         {/* Team Identity */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1d0f0c] border border-[#b43426]/40 flex items-center justify-center text-[#e8b5af] font-mono font-bold text-sm shadow-inner">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-[#1e1e1e] border border-[#007acc]/40 flex items-center justify-center text-[#4fc1ff] font-mono font-extrabold text-2xl shadow-inner">
             {displayName[0].toUpperCase()}
           </div>
           <div>
-            <div className="text-[10px] uppercase font-mono tracking-wider text-[#8c8079]">Team</div>
-            <div className="text-base font-bold text-[#f8f6f5] tracking-tight">{displayName}</div>
+            <div className="text-xs uppercase font-mono tracking-widest text-[#9cdcfe] font-semibold">Participating Team</div>
+            <div className="text-2xl font-black text-[#ffffff] tracking-tight font-sans">{displayName}</div>
           </div>
         </div>
 
         {/* Score & Node Badge */}
-        <div className="flex items-center gap-4 sm:gap-8">
+        <div className="flex items-center gap-6 sm:gap-10">
           <div className="text-right sm:text-center">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[#8c8079]">Total Score</div>
-            <div className="text-2xl font-black font-mono text-[#e06655]">
-              {nodeData.team_score} <span className="text-xs font-normal text-[#8c8079]">PTS</span>
+            <div className="text-xs font-mono uppercase tracking-widest text-[#9cdcfe] font-semibold">Total Score</div>
+            <div className="text-3xl font-black font-mono text-[#4ec9b0]">
+              {nodeData.team_score} <span className="text-sm font-normal text-[#858585]">PTS</span>
             </div>
           </div>
 
-          <div className="text-right border-l border-white/[0.08] pl-4 sm:pl-8">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-[#8c8079]">Active Node</div>
-            <div className="text-xl font-bold font-mono text-[#f8f6f5] flex items-center justify-end gap-1.5">
-              <span>{nodeData.node_id}</span>
+          <div className="text-right border-l border-[#3e3e42] pl-6 sm:pl-10">
+            <div className="text-xs font-mono uppercase tracking-widest text-[#9cdcfe] font-semibold">Active Node</div>
+            <div className="text-2xl font-bold font-mono text-[#ffffff] flex items-center justify-end gap-2">
+              <span className="text-[#4fc1ff]">{nodeData.node_id}</span>
               {nodeData.is_terminal && (
-                <span className="text-[10px] font-mono bg-[#35100c] border border-[#b43426]/50 text-[#fca58f] px-1.5 py-0.5 rounded">
+                <span className="text-xs font-mono bg-[#1e3a5f] border border-[#4fc1ff]/60 text-[#4fc1ff] px-2 py-0.5 rounded font-bold">
                   FINALE
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-[#8c8079] font-mono">
+            <div className="text-xs text-[#cccccc] font-mono mt-0.5">
               {NODE_TYPE_LABELS[nodeData.node_type]} • {DIFFICULTY_LABELS[nodeData.difficulty]}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Grid: Challenge & Action (Left) | Radar Map (Right) */}
-      <div className="grid lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Problem Statement & Verification */}
-        <div className="lg:col-span-7 space-y-5">
-          {/* Problem Card */}
-          <div className="p-6 rounded-2xl bg-[#0e0a09]/75 border border-white/[0.08] backdrop-blur-xl shadow-xl">
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.06] text-xs font-mono text-[#8c8079]">
-              <span className="font-semibold text-[#e06655] uppercase tracking-wider">
-                Challenge Details
+      {/* Full-Width Expanded Challenge Screen (No Graph!) */}
+      <div className="space-y-6">
+        {/* Expanded Problem Card - Priority 1, Highly Readable */}
+        <div className="p-8 sm:p-10 rounded-2xl bg-[#252526] border border-[#3e3e42] shadow-2xl">
+          <div className="flex items-center justify-between pb-4 mb-6 border-b border-[#3e3e42] text-sm font-mono">
+            <span className="font-bold text-[#4fc1ff] uppercase tracking-wider flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#4ec9b0]" />
+              Challenge Statement
+            </span>
+            <span className="text-[#858585] font-semibold">
+              Node {nodeData.node_id} • {NODE_TYPE_LABELS[nodeData.node_type]}
+            </span>
+          </div>
+
+          <div className="text-lg sm:text-xl text-[#ffffff] leading-relaxed font-sans whitespace-pre-wrap font-medium">
+            {nodeData.question_text}
+          </div>
+        </div>
+
+        {/* Action Area: Either Path Choice OR Invigilator Passcode */}
+        {nodeData.movement_unlocked ? (
+          <div className="p-8 sm:p-10 rounded-2xl bg-[#252526] border border-[#4ec9b0]/50 shadow-2xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-[#1e1e1e] border border-[#4ec9b0]/60 flex items-center justify-center text-[#4ec9b0] text-xl font-bold">
+                ✓
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-[#ffffff] font-mono uppercase tracking-wide">
+                  {nodeData.is_terminal ? "Tournament Finale Reached" : "Branch Traversal Unlocked"}
+                </h3>
+                <p className="text-sm text-[#cccccc] mt-1">
+                  {nodeData.is_terminal
+                    ? "Congratulations! You have successfully completed the final tournament challenge."
+                    : "Select your team's next route from the paths below:"}
+                </p>
+              </div>
+            </div>
+
+            {nodeData.is_terminal ? (
+              <button
+                onClick={() => router.push("/winner")}
+                className="w-full py-4 rounded-xl bg-[#007acc] hover:bg-[#1f8ad2] text-white font-mono text-sm font-bold uppercase tracking-wider transition-all shadow-lg shadow-[#007acc]/30 cursor-pointer"
+              >
+                View Final Achievement & Scorecard →
+              </button>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4 mt-6">
+                {nodeData.available_routes?.map((route) => (
+                  <button
+                    key={route.direction}
+                    onClick={() => handleMove(route.direction)}
+                    disabled={moving}
+                    className="p-6 rounded-xl bg-[#1e1e1e] hover:bg-[#2d2d2d] border border-[#3e3e42] hover:border-[#007acc] text-left transition-all flex flex-col justify-between cursor-pointer disabled:opacity-50 group shadow-md"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-mono uppercase font-bold tracking-widest text-[#4fc1ff]">
+                        {route.direction === "continue" ? "FORWARD" : `${route.direction.toUpperCase()} PATH`}
+                      </span>
+                      <span className="text-xs font-mono px-2.5 py-1 rounded bg-[#252526] text-[#dcdcaa] border border-[#3e3e42]">
+                        {DIFFICULTY_LABELS[route.difficulty]}
+                      </span>
+                    </div>
+                    <div className="text-lg font-bold text-white group-hover:text-[#4fc1ff] transition-colors">
+                      {NODE_TYPE_LABELS[route.type]} Challenge
+                    </div>
+                    <div className="mt-4 text-xs text-[#858585] flex items-center justify-between font-mono">
+                      <span>{route.terminal ? "Final Destination Node" : "Next Node"}</span>
+                      <span className="text-[#4fc1ff] text-base group-hover:translate-x-1.5 transition-transform">→</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Invigilator Verification Portal - Full Width */
+          <div className="p-8 sm:p-10 rounded-2xl bg-[#252526] border border-[#3e3e42] shadow-2xl">
+            <div className="flex items-center justify-between pb-4 mb-6 border-b border-[#3e3e42]">
+              <span className="text-sm font-mono uppercase tracking-wider text-[#4fc1ff] font-bold">
+                Invigilator Approval
               </span>
-              <span>Level {nodeData.node_id}</span>
-            </div>
-
-            <div className="text-sm text-[#ece4dc] leading-relaxed font-sans whitespace-pre-wrap font-medium">
-              {nodeData.question_text}
-            </div>
-          </div>
-
-          {/* Action Area: Either Path Choice OR Invigilator Passcode */}
-          {nodeData.movement_unlocked ? (
-            <div className="p-6 rounded-2xl bg-[#140e09]/80 border border-[#d9822b]/35 backdrop-blur-xl shadow-xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-[#2b1708] border border-[#d9822b]/50 flex items-center justify-center text-[#fcd34d] text-sm font-bold">
-                  ✓
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-[#fed7aa] font-mono uppercase tracking-wide">
-                    {nodeData.is_terminal ? "Tournament Finale Reached" : "Branch Traversal Unlocked"}
-                  </h3>
-                  <p className="text-xs text-[#b8aaa0]">
-                    {nodeData.is_terminal
-                      ? "You have completed the tournament graph. Proceed to the leaderboard."
-                      : "Select your team's next route from the paths below:"}
-                  </p>
-                </div>
-              </div>
-
-              {nodeData.is_terminal ? (
-                <button
-                  onClick={() => router.push("/results")}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#b43426] to-[#c84332] hover:from-[#c84332] hover:to-[#b43426] text-white font-mono text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-[#b43426]/20 cursor-pointer"
-                >
-                  View Final Standings & Scorecard →
-                </button>
-              ) : (
-                <div className="grid sm:grid-cols-2 gap-3 mt-4">
-                  {nodeData.available_routes?.map((route) => (
-                    <button
-                      key={route.direction}
-                      onClick={() => handleMove(route.direction)}
-                      disabled={moving}
-                      className="p-4 rounded-xl bg-[#0c0807] hover:bg-[#160f0d] border border-[#d9822b]/30 hover:border-[#d9822b] text-left transition-all flex flex-col justify-between cursor-pointer disabled:opacity-50 group"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-mono uppercase font-bold tracking-widest text-[#d9822b]">
-                          {route.direction === "continue" ? "FORWARD" : `${route.direction.toUpperCase()} PATH`}
-                        </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#18100e] text-[#d1c7c2]">
-                          {DIFFICULTY_LABELS[route.difficulty]}
-                        </span>
-                      </div>
-                      <div className="text-sm font-semibold text-white group-hover:text-[#fed7aa]">
-                        {NODE_TYPE_LABELS[route.type]} Challenge
-                      </div>
-                      <div className="mt-2 text-[11px] text-[#8c8079] flex items-center justify-between font-mono">
-                        <span>{route.terminal ? "Final Destination" : "Next Node"}</span>
-                        <span className="text-[#d9822b] group-hover:translate-x-1 transition-transform">→</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Invigilator Verification Portal */
-            <div className="p-6 rounded-2xl bg-[#0e0a09]/75 border border-white/[0.08] backdrop-blur-xl shadow-xl">
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/[0.06]">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#e06655] font-semibold">
-                  Invigilator Approval
+              <div className="flex items-center gap-6 text-sm font-mono">
+                <span className="text-[#858585]">
+                  Attempts Left: <strong className="text-white text-base ml-1">{nodeData.attempts_left} / 3</strong>
                 </span>
-                <div className="flex items-center gap-4 text-xs font-mono">
-                  <span className="text-[#8c8079]">
-                    Attempts Left: <strong className="text-white">{nodeData.attempts_left} / 3</strong>
-                  </span>
-                  <span className="text-[#8c8079]">
-                    Points: <strong className="text-[#e06655]">+{nodeData.score_available} PTS</strong>
-                  </span>
-                </div>
+                <span className="text-[#858585]">
+                  Points: <strong className="text-[#4ec9b0] text-base ml-1">+{nodeData.score_available} PTS</strong>
+                </span>
               </div>
-
-              {/* In-room instruction */}
-              <div className="p-3.5 rounded-xl bg-[#120b0a] border border-white/[0.06] mb-4 text-xs text-[#d1c7c2] flex items-start gap-2.5">
-                <span className="text-base text-[#e06655]">ℹ</span>
-                <div>
-                  Demonstrate your solution to the room invigilator. They will enter their verification passcode below to approve your solution or record a strike.
-                </div>
-              </div>
-
-              {/* Feedback messages */}
-              {feedback && (
-                <div
-                  className={`p-3 rounded-xl font-mono text-xs mb-4 border ${
-                    feedback.type === "success"
-                      ? "bg-emerald-950/40 border-emerald-500/40 text-emerald-300"
-                      : feedback.type === "strike"
-                      ? "bg-amber-950/40 border-amber-500/40 text-amber-300"
-                      : "bg-[#21110e] border-[#b43426]/40 text-[#e8b5af]"
-                  }`}
-                >
-                  {feedback.message}
-                </div>
-              )}
-
-              {error && (
-                <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 font-mono text-xs mb-4">
-                  {error}
-                </div>
-              )}
-
-              {/* Passcode Form */}
-              <form onSubmit={handlePasscodeSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-[#8c8079] mb-1.5">
-                    Invigilator Passcode
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={passcode}
-                    onChange={(e) => setPasscode(e.target.value)}
-                    placeholder="Enter volunteer passcode..."
-                    disabled={submitting || nodeData.attempts_left === 0}
-                    className="w-full px-4 py-2.5 bg-[#070505] border border-white/[0.1] focus:border-[#b43426] rounded-xl text-white font-mono text-sm tracking-wider focus:outline-none disabled:opacity-40"
-                  />
-                  <p className="text-[11px] text-[#594f49] mt-1 font-mono">
-                    Invigilator enters approval code (advances team) or strike code (records retry).
-                  </p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submitting || !passcode.trim() || nodeData.attempts_left === 0}
-                  className="w-full py-3 bg-[#b43426] hover:bg-[#c84332] text-white font-mono text-xs font-bold tracking-wider uppercase rounded-xl transition-all disabled:opacity-40 cursor-pointer shadow-md shadow-[#b43426]/20"
-                >
-                  {submitting ? "Verifying..." : "Submit Passcode for Verification"}
-                </button>
-              </form>
             </div>
-          )}
-        </div>
 
-        {/* Right Column: Node Map Radar */}
-        <div className="lg:col-span-5 space-y-3">
-          <div className="flex items-center justify-between text-xs font-mono text-[#8c8079] px-1">
-            <span className="font-semibold uppercase tracking-wider">Tournament Radar</span>
-            <span>Path Length: {visitedNodes.length}</span>
+            {/* In-room instruction */}
+            <div className="p-4 rounded-xl bg-[#1e1e1e] border border-[#3e3e42] mb-6 text-sm text-[#cccccc] flex items-start gap-3">
+              <span className="text-lg text-[#4fc1ff] font-bold">ℹ</span>
+              <div>
+                Demonstrate your solution to the room invigilator. They will enter their verification passcode below to approve your solution or record a strike.
+              </div>
+            </div>
+
+            {/* Feedback messages */}
+            {feedback && (
+              <div
+                className={`p-4 rounded-xl font-mono text-sm mb-6 border ${
+                  feedback.type === "success"
+                    ? "bg-[#1e3a2b] border-[#4ec9b0]/50 text-[#4ec9b0]"
+                    : feedback.type === "strike"
+                    ? "bg-[#3a2e1e] border-[#dcdcaa]/50 text-[#dcdcaa]"
+                    : "bg-[#1e2e3e] border-[#007acc]/50 text-[#4fc1ff]"
+                }`}
+              >
+                {feedback.message}
+              </div>
+            )}
+
+            {error && (
+              <div className="p-4 rounded-xl bg-[#3c1e1e] border border-[#f48771]/50 text-[#f48771] font-mono text-sm mb-6">
+                {error}
+              </div>
+            )}
+
+            {/* Passcode Form */}
+            <form onSubmit={handlePasscodeSubmit} className="space-y-6">
+              <div>
+                <label className="block text-xs font-mono uppercase tracking-wider text-[#9cdcfe] mb-2 font-semibold">
+                  Invigilator Passcode
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={passcode}
+                  onChange={(e) => setPasscode(e.target.value)}
+                  placeholder="Enter volunteer passcode..."
+                  disabled={submitting || nodeData.attempts_left === 0}
+                  className="w-full px-5 py-3.5 bg-[#1e1e1e] border border-[#3e3e42] focus:border-[#007acc] rounded-xl text-white font-mono text-base tracking-wider focus:outline-none disabled:opacity-40 transition-colors"
+                />
+                <p className="text-xs text-[#858585] mt-2 font-mono">
+                  Invigilator enters approval code (advances team) or strike code (records retry).
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting || !passcode.trim() || nodeData.attempts_left === 0}
+                className="w-full py-4 bg-[#007acc] hover:bg-[#1f8ad2] text-white font-mono text-sm font-bold tracking-wider uppercase rounded-xl transition-all disabled:opacity-40 cursor-pointer shadow-lg shadow-[#007acc]/25"
+              >
+                {submitting ? "Verifying..." : "Submit Passcode for Verification"}
+              </button>
+            </form>
           </div>
-
-          <NodeGraph
-            currentNodeId={nodeData.node_id}
-            visitedNodes={visitedNodes}
-            availableRoutes={nodeData.available_routes}
-            onSelectRoute={handleMove}
-            compact={false}
-          />
-
-          <div className="p-3 rounded-xl bg-[#0e0a09]/75 border border-white/[0.08] text-[11px] font-mono text-[#8c8079] flex items-center justify-between">
-            <span className="truncate mr-2">Visited: {visitedNodes.join(" → ")}</span>
-            <span className="text-[#e06655] font-bold shrink-0">Target: N08</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

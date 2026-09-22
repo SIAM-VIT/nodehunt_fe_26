@@ -26,45 +26,12 @@ export function NodeGraph({
   const [hovered, setHovered] = useState<string | null>(null);
 
   const visibleNodeIds = useMemo(() => {
-    if (adminMode) {
-      return new Set(HUNT_NODES.map((n) => n.id));
-    }
-    const set = new Set<string>(visitedNodes);
-    set.add(currentNodeId);
-
-    // ONLY reveal target nodes if movement is actually unlocked and outgoing routes exist!
-    if (availableRoutes && availableRoutes.length > 0) {
-      const outgoingEdges = HUNT_EDGES.filter((e) => e.from === currentNodeId);
-      for (const route of availableRoutes) {
-        const matchingEdge = outgoingEdges.find((e) => e.direction === route.direction);
-        if (matchingEdge) {
-          set.add(matchingEdge.to);
-        }
-      }
-    }
-    return set;
-  }, [adminMode, visitedNodes, currentNodeId, availableRoutes]);
+    return new Set(HUNT_NODES.map((n) => n.id));
+  }, []);
 
   const visibleEdges = useMemo(() => {
-    if (adminMode) {
-      return HUNT_EDGES;
-    }
-    // Only show edges between nodes that are both visible
-    return HUNT_EDGES.filter((edge) => {
-      // Show traversed path
-      const isTraversed =
-        visitedNodes.includes(edge.from) &&
-        (visitedNodes.includes(edge.to) || edge.to === currentNodeId);
-
-      // Show newly unlocked outgoing route from the current node
-      const isUnlockedOutgoing =
-        edge.from === currentNodeId &&
-        availableRoutes &&
-        availableRoutes.some((r) => r.direction === edge.direction);
-
-      return isTraversed || isUnlockedOutgoing;
-    });
-  }, [adminMode, visitedNodes, currentNodeId, availableRoutes]);
+    return HUNT_EDGES;
+  }, []);
 
   const getNodeCoords = (node: HuntNode) => {
     const cx = (node.x / 100) * 680 + 60;
@@ -72,33 +39,18 @@ export function NodeGraph({
     return { cx, cy };
   };
 
-  const getSelectableRoute = (targetNodeId: string) => {
-    // A route is ONLY selectable if movement is unlocked and the target is directly connected from current node
-    if (!availableRoutes || availableRoutes.length === 0) return null;
-    const edge = HUNT_EDGES.find(
-      (e) => e.from === currentNodeId && e.to === targetNodeId
-    );
-    if (!edge) return null;
-    return availableRoutes.find((r) => r.direction === edge.direction);
-  };
-
   return (
     <div
       className={`relative w-full ${
-        compact ? "h-[320px]" : "h-[440px]"
-      } bg-[#080606]/85 rounded-2xl border border-white/[0.08] backdrop-blur-md overflow-hidden flex flex-col items-center justify-center p-2 shadow-2xl`}
+        compact ? "h-[320px]" : "h-[460px]"
+      } bg-[#1e1e1e] rounded-2xl border border-[#3e3e42] overflow-hidden flex flex-col items-center justify-center p-3 shadow-2xl`}
     >
       {/* Header Label */}
-      <div className="absolute top-3 left-4 z-10 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-[#b43426]" />
-        <span className="text-[11px] font-mono uppercase tracking-wider text-[#d1c7c2] font-semibold">
-          {adminMode ? "Full Graph Map (10 Nodes)" : "Active Radar"}
+      <div className="absolute top-4 left-5 z-10 flex items-center gap-2">
+        <span className="w-2.5 h-2.5 rounded-full bg-[#007acc]" />
+        <span className="text-xs font-mono uppercase tracking-wider text-[#d4d4d4] font-bold">
+          Full Tournament Topology (10 Nodes)
         </span>
-        {!adminMode && (
-          <span className="text-[10px] bg-[#140c0b] border border-[#3a1b17] px-2 py-0.5 rounded text-[#e06655] font-mono">
-            Fog of War
-          </span>
-        )}
       </div>
 
       <svg
@@ -115,27 +67,17 @@ export function NodeGraph({
             refY="3"
             orient="auto"
           >
-            <polygon points="0 0, 8 3, 0 6" fill="#2d2624" />
+            <polygon points="0 0, 8 3, 0 6" fill="#3e3e42" />
           </marker>
           <marker
-            id="arrowhead-rust"
+            id="arrowhead-blue"
             markerWidth="9"
             markerHeight="6.5"
             refX="28"
             refY="3.25"
             orient="auto"
           >
-            <polygon points="0 0, 9 3.25, 0 6.5" fill="#b43426" />
-          </marker>
-          <marker
-            id="arrowhead-amber"
-            markerWidth="10"
-            markerHeight="7"
-            refX="30"
-            refY="3.5"
-            orient="auto"
-          >
-            <polygon points="0 0, 10 3.5, 0 7" fill="#d9822b" />
+            <polygon points="0 0, 9 3.25, 0 6.5" fill="#007acc" />
           </marker>
         </defs>
 
@@ -145,110 +87,40 @@ export function NodeGraph({
           const toNode = HUNT_NODES.find((n) => n.id === edge.to);
           if (!fromNode || !toNode) return null;
 
-          const isVisible = visibleEdges.includes(edge);
-          if (!adminMode && !isVisible) {
-            return null;
-          }
-
           const fromCoords = getNodeCoords(fromNode);
           const toCoords = getNodeCoords(toNode);
 
-          const isTraversed =
-            visitedNodes.includes(fromNode.id) &&
-            (visitedNodes.includes(toNode.id) || toNode.id === currentNodeId);
-
-          const selectableRoute = getSelectableRoute(toNode.id);
-
-          let strokeColor = "#1f1a18";
-          let strokeWidth = 1.5;
-          let marker = "url(#arrowhead-dim)";
-          let strokeDash = "none";
-
-          if (isTraversed) {
-            strokeColor = "#b43426";
-            strokeWidth = 3;
-            marker = "url(#arrowhead-rust)";
-          } else if (selectableRoute) {
-            strokeColor = "#d9822b";
-            strokeWidth = 3.5;
-            marker = "url(#arrowhead-amber)";
-            strokeDash = "6,4";
-          }
-
-          const midX = (fromCoords.cx + toCoords.cx) / 2;
-          const midY = (fromCoords.cy + toCoords.cy) / 2;
-
           return (
-            <g key={`edge-${i}`}>
-              <line
-                x1={fromCoords.cx}
-                y1={fromCoords.cy}
-                x2={toCoords.cx}
-                y2={toCoords.cy}
-                stroke={strokeColor}
-                strokeWidth={strokeWidth}
-                strokeDasharray={strokeDash}
-                markerEnd={marker}
-              />
-              {selectableRoute && (
-                <g>
-                  <rect
-                    x={midX - 32}
-                    y={midY - 12}
-                    width={64}
-                    height={22}
-                    rx={6}
-                    fill="#080606"
-                    stroke="#d9822b"
-                    strokeWidth={1.5}
-                  />
-                  <text
-                    x={midX}
-                    y={midY + 1}
-                    fill="#d9822b"
-                    fontSize="11"
-                    fontFamily="monospace"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                  >
-                    {selectableRoute.direction.toUpperCase()}
-                  </text>
-                </g>
-              )}
-            </g>
+            <line
+              key={`edge-${i}`}
+              x1={fromCoords.cx}
+              y1={fromCoords.cy}
+              x2={toCoords.cx}
+              y2={toCoords.cy}
+              stroke="#3e3e42"
+              strokeWidth={2}
+              markerEnd="url(#arrowhead-dim)"
+            />
           );
         })}
 
         {/* Render Nodes */}
         {HUNT_NODES.map((node) => {
-          const isVisible = visibleNodeIds.has(node.id);
-          const isCurrent = currentNodeId === node.id;
-          const isVisited = visitedNodes.includes(node.id);
-          const selectableRoute = getSelectableRoute(node.id);
           const coords = getNodeCoords(node);
           const teamCount = teamLocations[node.id] ?? 0;
 
-          if (!adminMode && !isVisible) {
-            return null; // Fog of War hides unrevealed nodes completely
-          }
-
-          let fillColor = "#110d0c";
-          let strokeColor = "#2c2220";
+          let fillColor = "#252526";
+          let strokeColor = "#3e3e42";
           let strokeWidth = 2;
 
-          if (isCurrent) {
-            fillColor = "#2b0f0b"; // deep muted rust
-            strokeColor = "#c84332";
-            strokeWidth = 3.5;
-          } else if (selectableRoute) {
-            fillColor = "#261506"; // muted warm amber
-            strokeColor = "#d9822b";
-            strokeWidth = 3.5;
-          } else if (isVisited) {
-            fillColor = "#1f100e"; // quiet brick
-            strokeColor = "#9b3024";
-            strokeWidth = 2;
+          if (node.terminal) {
+            strokeColor = "#4fc1ff";
+            strokeWidth = 3;
+            fillColor = "#1e2e3e";
+          } else if (teamCount > 0) {
+            strokeColor = "#007acc";
+            strokeWidth = 3;
+            fillColor = "#1e3a5f";
           }
 
           const radius = node.terminal ? 26 : 22;
@@ -256,15 +128,7 @@ export function NodeGraph({
           return (
             <g
               key={node.id}
-              className={`${
-                selectableRoute ? "cursor-pointer" : "cursor-default"
-              } transition-transform`}
-              onClick={() => {
-                // Strictly disallow clicking on unselectable or disconnected nodes!
-                if (selectableRoute && onSelectRoute) {
-                  onSelectRoute(selectableRoute.direction);
-                }
-              }}
+              className="cursor-default transition-transform"
               onMouseEnter={() => setHovered(node.id)}
               onMouseLeave={() => setHovered(null)}
             >
@@ -275,9 +139,9 @@ export function NodeGraph({
                   cy={coords.cy}
                   r={radius + 6}
                   fill="none"
-                  stroke={isCurrent ? "#c84332" : "#7f1d1d"}
-                  strokeWidth={1.5}
-                  strokeDasharray={isCurrent ? "4,3" : "none"}
+                  stroke="#4fc1ff"
+                  strokeWidth={2}
+                  strokeDasharray="4,3"
                 />
               )}
 
@@ -297,18 +161,10 @@ export function NodeGraph({
                 y={coords.cy - 1}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize="12"
+                fontSize="13"
                 fontFamily="monospace"
                 fontWeight="bold"
-                fill={
-                  isCurrent
-                    ? "#fff5f4"
-                    : isVisited
-                    ? "#f0d5d2"
-                    : selectableRoute
-                    ? "#fed7aa"
-                    : "#d1c7c2"
-                }
+                fill="#ffffff"
               >
                 {node.id}
               </text>
@@ -316,33 +172,33 @@ export function NodeGraph({
               {/* Node Sub-badge (Type + Diff) */}
               <text
                 x={coords.cx}
-                y={coords.cy + 11}
+                y={coords.cy + 12}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fontSize="8.5"
+                fontSize="9"
                 fontFamily="monospace"
-                fill="#8c8079"
+                fill="#858585"
               >
                 {node.type}•{node.difficulty[0].toUpperCase()}
               </text>
 
               {/* Admin Team Location Indicator */}
-              {adminMode && teamCount > 0 && (
+              {teamCount > 0 && (
                 <g>
                   <circle
-                    cx={coords.cx + 16}
-                    cy={coords.cy - 16}
-                    r={9.5}
-                    fill="#b43426"
-                    stroke="#050505"
-                    strokeWidth={1.5}
+                    cx={coords.cx + 17}
+                    cy={coords.cy - 17}
+                    r={10.5}
+                    fill="#007acc"
+                    stroke="#1e1e1e"
+                    strokeWidth={2}
                   />
                   <text
-                    x={coords.cx + 16}
-                    y={coords.cy - 15}
+                    x={coords.cx + 17}
+                    y={coords.cy - 16}
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fontSize="9.5"
+                    fontSize="10"
                     fontFamily="monospace"
                     fontWeight="bold"
                     fill="#ffffff"
