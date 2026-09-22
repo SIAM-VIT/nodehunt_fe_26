@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchNode,
@@ -16,6 +16,7 @@ import {
   STORAGE_TEAM_NAME,
 } from "@/lib/constants";
 import { DIFFICULTY_LABELS, NODE_TYPE_LABELS } from "@/data/graph";
+import { RefreshCw } from "lucide-react";
 
 export function GameClient() {
   const router = useRouter();
@@ -24,15 +25,19 @@ export function GameClient() {
   const [nodeData, setNodeData] = useState<NodeQuestion | null>(null);
   const [passcode, setPasscode] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [moving, setMoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; type: "success" | "strike" | "info" } | null>(null);
   const [visitedNodes, setVisitedNodes] = useState<string[]>(["N01"]);
+  const isPollingRef = useRef(false);
 
-  const loadNodeData = useCallback(async (sid: string, nodeId: string) => {
-    setLoading(true);
+  const loadNodeData = useCallback(async (sid: string, nodeId: string, silent = false) => {
+    if (!silent) setLoading(true);
+    else setIsRefreshing(true);
     setError(null);
+
     try {
       const data = await fetchNode(nodeId, sid);
       setNodeData(data);
@@ -60,10 +65,13 @@ export function GameClient() {
         router.push("/winner");
         return;
       }
-      const rawMsg = err.message || "Failed to load node challenge";
-      setError(typeof rawMsg === "string" ? rawMsg : JSON.stringify(rawMsg));
+      if (!silent) {
+        const rawMsg = err.message || "Failed to load node challenge";
+        setError(typeof rawMsg === "string" ? rawMsg : JSON.stringify(rawMsg));
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+      setIsRefreshing(false);
     }
   }, [router]);
 
@@ -101,6 +109,28 @@ export function GameClient() {
         loadNodeData(sid, storedNode);
       });
   }, [router, loadNodeData]);
+
+  // Fast background polling: Checks every 3s if another device (invigilator) approved the node
+  useEffect(() => {
+    if (!sessionId || !nodeData || nodeData.movement_unlocked || nodeData.completed) return;
+
+    const interval = setInterval(() => {
+      if (!isPollingRef.current) {
+        isPollingRef.current = true;
+        loadNodeData(sessionId, nodeData.node_id, true).finally(() => {
+          isPollingRef.current = false;
+        });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [sessionId, nodeData, loadNodeData]);
+
+  const handleManualRefresh = () => {
+    if (sessionId && nodeData && !loading && !isRefreshing) {
+      loadNodeData(sessionId, nodeData.node_id, true);
+    }
+  };
 
   const handlePasscodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,7 +221,7 @@ export function GameClient() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-6 max-w-6xl">
-      {/* Top Header Bar - Full Width, Clear VS Code Style */}
+      {/* Top Header Bar */}
       <div className="p-6 rounded-2xl bg-[#252526] border border-[#3e3e42] mb-8 flex flex-wrap items-center justify-between gap-6 shadow-2xl">
         {/* Team Identity */}
         <div className="flex items-center gap-4">
@@ -230,9 +260,9 @@ export function GameClient() {
         </div>
       </div>
 
-      {/* Full-Width Expanded Challenge Screen (No Graph!) */}
+      {/* Full-Width Expanded Challenge Screen */}
       <div className="space-y-6">
-        {/* Expanded Problem Card - Priority 1, Highly Readable */}
+        {/* Expanded Problem Card */}
         <div className="p-8 sm:p-10 rounded-2xl bg-[#252526] border border-[#3e3e42] shadow-2xl">
           <div className="flex items-center justify-between pb-4 mb-6 border-b border-[#3e3e42] text-sm font-mono">
             <span className="font-bold text-[#4fc1ff] uppercase tracking-wider flex items-center gap-2">
@@ -305,12 +335,27 @@ export function GameClient() {
             )}
           </div>
         ) : (
-          /* Invigilator Verification Portal - Full Width */
+          /* Invigilator Verification Portal */
           <div className="p-8 sm:p-10 rounded-2xl bg-[#252526] border border-[#3e3e42] shadow-2xl">
-            <div className="flex items-center justify-between pb-4 mb-6 border-b border-[#3e3e42]">
-              <span className="text-sm font-mono uppercase tracking-wider text-[#4fc1ff] font-bold">
-                Invigilator Approval
-              </span>
+            {/* Header + Fast Refresh Status Bar */}
+            <div className="flex flex-wrap items-center justify-between pb-4 mb-6 border-b border-[#3e3e42] gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-mono uppercase tracking-wider text-[#4fc1ff] font-bold">
+                  Invigilator Approval
+                </span>
+                {/* Fast Refresh Bar Button */}
+                <button
+                  type="button"
+                  onClick={handleManualRefresh}
+                  disabled={loading || isRefreshing}
+                  title="Check if invigilator verified your solution from another device"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#1e1e1e] hover:bg-[#2d2d2d] border border-[#3e3e42] hover:border-[#007acc] text-[11px] font-mono text-[#9cdcfe] hover:text-white transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#4fc1ff]" : ""}`} />
+                  <span>{isRefreshing ? "Checking..." : "Check Status"}</span>
+                </button>
+              </div>
+
               <div className="flex items-center gap-6 text-sm font-mono">
                 <span className="text-[#858585]">
                   Attempts Left: <strong className="text-white text-base ml-1">{nodeData.attempts_left} / 3</strong>
@@ -325,7 +370,7 @@ export function GameClient() {
             <div className="p-4 rounded-xl bg-[#1e1e1e] border border-[#3e3e42] mb-6 text-sm text-[#cccccc] flex items-start gap-3">
               <span className="text-lg text-[#4fc1ff] font-bold">ℹ</span>
               <div>
-                Demonstrate your solution to the room invigilator. They will enter their verification passcode below to approve your solution or record a strike.
+                Demonstrate your solution to the room invigilator. They can approve directly from their invigilator device (this screen updates automatically), or enter the verification passcode below.
               </div>
             </div>
 
