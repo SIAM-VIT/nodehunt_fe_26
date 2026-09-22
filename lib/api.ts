@@ -696,7 +696,7 @@ export async function fetchAdminTeams(secret: string): Promise<AdminTeamOut[]> {
       };
     });
   } catch (err) {
-    return localTeams;
+      throw err;
   }
 }
 
