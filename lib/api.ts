@@ -695,8 +695,8 @@ export async function fetchAdminTeams(secret: string): Promise<AdminTeamOut[]> {
         plain_password: match?.plain_password || rt.plain_password || "—",
       };
     });
-  } catch {
-    return localTeams;
+  } catch (err) {
+    throw err;
   }
 }
 
