@@ -16,7 +16,7 @@ import {
   STORAGE_TEAM_NAME,
 } from "@/lib/constants";
 import { DIFFICULTY_LABELS, NODE_TYPE_LABELS } from "@/data/graph";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ArrowRight } from "lucide-react";
 
 export function GameClient() {
   const router = useRouter();
@@ -281,19 +281,19 @@ export function GameClient() {
 
         {/* Action Area: Either Path Choice OR Invigilator Passcode */}
         {nodeData.movement_unlocked ? (
-          <div className="p-8 sm:p-10 rounded-2xl bg-[#252526] border border-[#4ec9b0]/50 shadow-2xl">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-[#1e1e1e] border border-[#4ec9b0]/60 flex items-center justify-center text-[#4ec9b0] text-xl font-bold">
+          <div className="p-7 sm:p-8 rounded-2xl bg-[#252526] border border-[#4ec9b0]/50 shadow-2xl">
+            <div className="flex items-center gap-3.5 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-[#1e1e1e] border border-[#4ec9b0]/60 flex items-center justify-center text-[#4ec9b0] text-lg font-bold">
                 ✓
               </div>
               <div>
-                <h3 className="text-xl font-bold text-[#ffffff] font-mono uppercase tracking-wide">
+                <h3 className="text-lg font-bold text-[#ffffff] font-mono uppercase tracking-wide">
                   {nodeData.is_terminal ? "Tournament Finale Reached" : "Branch Traversal Unlocked"}
                 </h3>
-                <p className="text-sm text-[#cccccc] mt-1">
+                <p className="text-xs sm:text-sm text-[#cccccc] mt-0.5">
                   {nodeData.is_terminal
-                    ? "Congratulations! You have successfully completed the final tournament challenge."
-                    : "Select your team's next route from the paths below:"}
+                    ? "Congratulations! You have completed the final tournament challenge."
+                    : "Choose your direction to proceed to the next mystery node:"}
                 </p>
               </div>
             </div>
@@ -306,28 +306,20 @@ export function GameClient() {
                 View Final Achievement & Scorecard →
               </button>
             ) : (
-              <div className="grid sm:grid-cols-2 gap-4 mt-6">
+              /* Compact, Sleek Directional Buttons (Details Hidden) */
+              <div className="grid sm:grid-cols-2 gap-3.5 pt-2">
                 {nodeData.available_routes?.map((route) => (
                   <button
                     key={route.direction}
                     onClick={() => handleMove(route.direction)}
                     disabled={moving}
-                    className="p-6 rounded-xl bg-[#1e1e1e] hover:bg-[#2d2d2d] border border-[#3e3e42] hover:border-[#007acc] text-left transition-all flex flex-col justify-between cursor-pointer disabled:opacity-50 group shadow-md"
+                    className="py-4 px-6 rounded-xl bg-[#1e1e1e] hover:bg-[#2d2d2d] border border-[#3e3e42] hover:border-[#007acc] text-left transition-all flex items-center justify-between cursor-pointer disabled:opacity-50 group shadow-md"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-mono uppercase font-bold tracking-widest text-[#4fc1ff]">
-                        {route.direction === "continue" ? "FORWARD" : `${route.direction.toUpperCase()} PATH`}
-                      </span>
-                      <span className="text-xs font-mono px-2.5 py-1 rounded bg-[#252526] text-[#dcdcaa] border border-[#3e3e42]">
-                        {DIFFICULTY_LABELS[route.difficulty]}
-                      </span>
-                    </div>
-                    <div className="text-lg font-bold text-white group-hover:text-[#4fc1ff] transition-colors">
-                      {NODE_TYPE_LABELS[route.type]} Challenge
-                    </div>
-                    <div className="mt-4 text-xs text-[#858585] flex items-center justify-between font-mono">
-                      <span>{route.terminal ? "Final Destination Node" : "Next Node"}</span>
-                      <span className="text-[#4fc1ff] text-base group-hover:translate-x-1.5 transition-transform">→</span>
+                    <span className="text-sm sm:text-base font-mono uppercase font-bold tracking-widest text-[#4fc1ff] group-hover:text-white transition-colors">
+                      {route.direction === "continue" ? "FORWARD PATH" : `${route.direction.toUpperCase()} PATH`}
+                    </span>
+                    <div className="w-8 h-8 rounded-lg bg-[#252526] group-hover:bg-[#007acc] flex items-center justify-center text-[#4fc1ff] group-hover:text-white transition-all">
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </button>
                 ))}
@@ -343,7 +335,6 @@ export function GameClient() {
                 <span className="text-sm font-mono uppercase tracking-wider text-[#4fc1ff] font-bold">
                   Invigilator Approval
                 </span>
-                {/* Fast Refresh Bar Button */}
                 <button
                   type="button"
                   onClick={handleManualRefresh}
