@@ -8,20 +8,23 @@ export default function WinnerPage() {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <div className="max-w-md mx-auto p-8 rounded-2xl bg-[#120b09]/90 border border-[#e5933a]/40 shadow-2xl">
-            <div className="text-4xl mb-3">🏆</div>
-            <h1 className="text-2xl font-bold text-[#f8f4f0] mb-2 font-mono">
+          <div className="max-w-lg mx-auto p-10 rounded-2xl bg-[#252526] border border-[#007acc]/60 shadow-2xl">
+            <div className="text-5xl mb-4">🏆</div>
+            <h1 className="text-3xl font-extrabold text-[#ffffff] mb-3 font-mono">
               HUNT OBJECTIVE COMPLETED!
             </h1>
-            <p className="text-xs text-[#9e9087] mb-6 font-sans leading-relaxed">
-              Congratulations! Your team successfully traversed the tournament graph and completed the final terminal node challenge.
+            <p className="text-sm text-[#cccccc] mb-8 font-sans leading-relaxed">
+              Congratulations! Your team successfully traversed the tournament graph and resolved the finale challenge at Node N10.
             </p>
-            <div className="flex justify-center gap-3 font-mono text-xs">
+            <div className="p-4 rounded-xl bg-[#1e1e1e] border border-[#3e3e42] text-xs font-mono text-[#9cdcfe] mb-6">
+              Final tournament standings and rankings will be officially projected and announced by the event organizers from the Admin Command Deck.
+            </div>
+            <div className="flex justify-center gap-4 font-mono text-xs">
               <Link
-                href="/results"
-                className="px-5 py-2.5 bg-[#d94f2b] hover:bg-[#c24122] text-white rounded-lg transition-colors font-bold"
+                href="/"
+                className="px-6 py-3 bg-[#007acc] hover:bg-[#1f8ad2] text-white rounded-xl transition-all font-bold shadow-md shadow-[#007acc]/20"
               >
-                View Official Results →
+                Back to Home
               </Link>
             </div>
           </div>
